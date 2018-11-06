@@ -2,6 +2,8 @@
 
 from pprint import pprint
 import random
+import operator
+import time
 
 def remove_punctuation(line):
     line = line.replace("\n", "")
@@ -19,10 +21,12 @@ def preprocessing(line):
     wordslist = list(map(lambda word: word.lower(), wordslist))
     return wordslist
 
-# probs is a list of probabilities
-def draw_samples(probs):
+# for the moment works only with unigram model TODO
+# takes a probs_dict (w_i:p(w_i) and samples a word)
+def draw_samples(model, probs_dict):
+    probs = sorted(probs_dict.items(), key = operator.itemgetter(1), reverse = True)
     # order probabilities in descending order
-    probs.sort(reverse = True)
+    #probs.sort(reverse = True)
     print(probs)
     # generate a random number x in (0,1)
     x = random.uniform(0,1)
@@ -30,24 +34,38 @@ def draw_samples(probs):
     for j in range(0, len(probs)): # da 0 a k-1
         sum = 0
         for i in range (0, j):
-            sum = sum + probs[i]
+            sum = sum + probs[i][1] # the sec value of the tuple is the value of the dict
         print("sum - x : ", sum - x)
         if sum - x >= 0:
             print('in if!')
             print('return sel_j')
-            return j
+            w_j = probs[i][0] # get the key, or the word
+            # j is the outcome index
+            # print(j)
+            return w_j
 
     return
 
-def unigram_model():
-    return
+# model can be 'unigram', 'bigram' or 'trigram'
+def text_generator(model, probs_dict):
+    eos = False
+    i = 0
+    w_list = []
 
-def bigram_model():
-    return
+    while not eos:
+        '''
+        if model == 'unigram':
+        elif model == 'bigram':
+        else:
+        '''
+        w_j = draw_samples(probs_dict)
+        w_list.append(w_j)
+        print(w_j)
+        if w_j == '.':
+            eos = True
+        i = i + 1
 
-def trigram_model():
-    return
-
+    return w_list
 
 def main():
     words = {}
@@ -56,7 +74,7 @@ def main():
     i = 0
     for line in corpus.readlines():
         wordslist += preprocessing(line)
-        if i >= 1000: # for testing purposes
+        if i >= 10: # for testing purposes
             break
         i += 1
 
@@ -105,8 +123,11 @@ def main():
 
     #pprint(trigram_dict)
     '''
-    index = draw_samples(list(unigram_prob.values()))
+    index = draw_samples(unigram_prob)
     print('index sampled : ', index)
     '''
+    sentence = text_generator(None, probs_dict = unigram_prob)
+    print('the generated sentence is : ', sentence)
+    
 if __name__ == "__main__":
     main()
