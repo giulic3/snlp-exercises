@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#! /usr/bin/python3
 
 from pprint import pprint
 import random
@@ -18,27 +18,28 @@ def remove_punctuation(line):
 def preprocessing(line):
     line = remove_punctuation(line)
     wordslist = line.split(" ")
+    # add start and end of sentence markers
+    wordslist.insert(0,'<s>')
+    wordslist.append('</s>')
     wordslist = list(map(lambda word: word.lower(), wordslist))
+
     return wordslist
 
 # for the moment works only with unigram model TODO
 # takes a probs_dict (w_i:p(w_i) and samples a word)
-def draw_samples(model, probs_dict):
-    probs = sorted(probs_dict.items(), key = operator.itemgetter(1), reverse = True)
+def draw_samples(probs_dict):
     # order probabilities in descending order
-    #probs.sort(reverse = True)
-    print(probs)
+    # probs.sort(reverse = True)
+    probs = sorted(probs_dict.items(), key = operator.itemgetter(1), reverse = True)
+    #print(probs)
     # generate a random number x in (0,1)
     x = random.uniform(0,1)
-
     for j in range(0, len(probs)): # da 0 a k-1
         sum = 0
         for i in range (0, j):
-            sum = sum + probs[i][1] # the sec value of the tuple is the value of the dict
-        print("sum - x : ", sum - x)
+            sum = sum + probs[i][1] # the second value of the tuple is the value of the dict
+        #print("sum - x : ", sum - x)
         if sum - x >= 0:
-            print('in if!')
-            print('return sel_j')
             w_j = probs[i][0] # get the key, or the word
             # j is the outcome index
             # print(j)
@@ -47,6 +48,7 @@ def draw_samples(model, probs_dict):
     return
 
 # model can be 'unigram', 'bigram' or 'trigram'
+#todo you can't generate a <s> TODO il simbolo iniziale non può essere chiave... oppure gli do probab totale
 def text_generator(model, probs_dict):
     eos = False
     i = 0
@@ -61,7 +63,7 @@ def text_generator(model, probs_dict):
         w_j = draw_samples(probs_dict)
         w_list.append(w_j)
         print(w_j)
-        if w_j == '.':
+        if w_j == "</s>":# or w_j == '.':
             eos = True
         i = i + 1
 
@@ -74,7 +76,7 @@ def main():
     i = 0
     for line in corpus.readlines():
         wordslist += preprocessing(line)
-        if i >= 10: # for testing purposes
+        if i >= 3: # for testing purposes
             break
         i += 1
 
@@ -82,13 +84,25 @@ def main():
     #wordslist = ['ciao', 'a', 'tutti', 'amici', 'ciao', 'a', 'voi', 'tutti', '.']
     #wordslist.insert(0,"<s>") # model the beginning of a sentence
     #wordslist.append("</s>") # model the end of a sentence
-    print('wordslist : ')
-    print(wordslist)
-    print('\n')
-    # create a list of frequencies of each word in the corpus
-    frequencies = list(map(lambda word: wordslist.count(word), wordslist)) #TODO comp. expensive
-    #print(frequencies)
+    print('wordslist : ', wordslist, '\n')
     length = len(wordslist) # corpus length
+
+    ##### 25 seconds with 2000 lines ####
+    freq_hash = {}
+    for i in range (0, length):
+        freq_hash[wordslist[i]] = 0
+    for i in range (0, length):
+        freq_hash[wordslist[i]] += 1
+    print('freq_hash :', freq_hash)
+    # create again a sorted list
+    frequencies = []
+    for i in range(0, length):
+        frequencies.append(freq_hash.get(wordslist[i]))
+
+    ##### 41 seconds with 2000 lines ###
+    #frequencies = list(map(lambda word: wordslist.count(word), wordslist)) #O(n^2)
+
+    print(frequencies)
     # unigram dict is made of pair key/values where key = w_i and val = f(w_i) - repeated values are discarded
     unigram_dict = dict(zip(wordslist, frequencies))
     #print(unigram_dict)
@@ -111,7 +125,7 @@ def main():
                     digram_dict[w_i][wordslist[j-1]] += 1
                 else:
                     digram_dict[w_i][wordslist[j-1]] = 1
-        #print('w_i : ', w_i,' digram_dict[w_i] : ' ,digram_dict[w_i])
+    #print('w_i : ', w_i,' digram_dict[w_i] : ' ,digram_dict[w_i])
     print('digram_dict : ')
     pprint(digram_dict)
 
@@ -128,6 +142,8 @@ def main():
     '''
     sentence = text_generator(None, probs_dict = unigram_prob)
     print('the generated sentence is : ', sentence)
-    
+
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
