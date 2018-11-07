@@ -9,7 +9,7 @@ def main():
     i = 0
     for line in corpus.readlines():
         wordslist += preprocessing(line)
-        if i >= 2: # for testing purposes
+        if i >= 100: # for testing purposes
             break
         i += 1
 
@@ -82,10 +82,11 @@ def main():
     unigram_prob = dict(zip(wordslist, list(map(lambda freq: float(freq)/length, frequencies))))
 
 
-    unigram_sentence = unigram_generator(None, probs_dict = unigram_prob)
+    unigram_sentence = unigram_generator(probs_dict = unigram_prob)
     bigram_sample_start = bigram_sampler(probs_dict = bigram_prob, given_word = '<s>')
     bigram_sample = bigram_sampler(probs_dict = bigram_prob, given_word = 'the')
 
+    bigram_sentence = bigram_generator(probs_dict = bigram_prob)
 
     ##### CONTROL PRINTS #####
 
@@ -105,6 +106,8 @@ def main():
     #print('the sentence generated with unigram is : ', unigram_sentence)
     print('bigram_sample_start :', bigram_sample_start)
     print('bigram_sample :', bigram_sample)
+    print('the sentence generated with bigram is : ', bigram_sentence)
+
 
 
 if __name__ == "__main__":

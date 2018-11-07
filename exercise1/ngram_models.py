@@ -71,13 +71,12 @@ def unigram_sampler(probs_dict):
 
 # model can be 'unigram', 'bigram' or 'trigram'
 #todo you can't generate a <s>
-def unigram_generator(model, probs_dict):
+def unigram_generator(probs_dict):
     eos = False
     i = 0
     w_list = []
 
     while not eos:
-
         w_j = unigram_sampler(probs_dict)
         if w_j != '<s>':
             w_list.append(w_j)
@@ -86,6 +85,7 @@ def unigram_generator(model, probs_dict):
         i = i + 1
 
     return w_list
+
 # probs_dict contains all the conditional probabilities, given_word could be w_i or <s>
 def bigram_sampler(probs_dict, given_word):
     # cerco tutte le s e resittuisco la parola che viene dopo
@@ -102,7 +102,6 @@ def bigram_sampler(probs_dict, given_word):
     else:
         probs = {}
         for k, v in probs_dict.items():
-
             if given_word in probs_dict[k]:
                     probs[k] = probs_dict[k][given_word]
         w_j = unigram_sampler(probs)
@@ -116,16 +115,16 @@ def bigram_generator(probs_dict):
     w_list = []
 
     while not eos:
-
         if i == 0:
-            unigram_sampler(probs_dict) #TODO finish
+            w_j = bigram_sampler(probs_dict, given_word = '<s>')
+            w_list.append(w_j)
         else:
-            w_j = unigram_sampler(probs_dict)
+            w_j = bigram_sampler(probs_dict, given_word = w_list[i-1])
             if w_j != '<s>':
                 w_list.append(w_j)
 
-        if w_j == "</s>":
-            eos = True
+            if w_j == "</s>":
+                eos = True
         i = i + 1
 
     return w_list
