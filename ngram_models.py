@@ -4,6 +4,7 @@ from pprint import pprint
 import random
 import operator
 import time
+from collections import defaultdict
 
 def remove_punctuation(line):
     line = line.replace("\n", "")
