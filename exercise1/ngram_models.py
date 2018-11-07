@@ -6,6 +6,7 @@ import operator
 import time
 from collections import defaultdict
 
+# to format output
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -21,6 +22,7 @@ def remove_punctuation(line):
     line = line.replace(",", "")
     line = line.replace(";", "")
     line = line.replace(":", "")
+    # add end of sentence marker
     line = line.replace("?", " </s>")
     line = line.replace("!", " </s>")
     line = line.replace(".", " </s>")
@@ -29,11 +31,9 @@ def remove_punctuation(line):
 def preprocessing(line):
     line = remove_punctuation(line)
     wordslist = line.split(" ")
-    # add start and end of sentence markers
+    # add start of sentence marker
     wordslist.insert(0,'<s>')
-    #wordslist.append('</s>')
     wordslist = list(map(lambda word: word.lower(), wordslist))
-
     return wordslist
 
 def unigram_frequencies(wordslist, length):
@@ -42,7 +42,6 @@ def unigram_frequencies(wordslist, length):
         freq_hash[wordslist[i]] = 0
     for i in range (0, length):
         freq_hash[wordslist[i]] += 1
-    #print('freq_hash :', freq_hash)
     # create again a sorted list
     frequencies = []
     for i in range(0, length):
@@ -50,14 +49,12 @@ def unigram_frequencies(wordslist, length):
 
     return frequencies
 
-# takes a probs_dict (w_i:p(w_i) and samples a word)
+# takes a probs_dict {w_i:p(w_i)} and samples a word
 def unigram_sampler(probs_dict):
     # order probabilities in descending order
     probs = sorted(probs_dict.items(), key = operator.itemgetter(1), reverse = True)
-    #print(probs)
     # generate a random number x in (0,1)
     x = random.uniform(0,1)
-    #for j in range(0, len(probs)): # from 0 to k-1
     sum = 0
     for i in range (0, len(probs)):
         sum = sum + probs[i][1] # the second value of the tuple is the value of the dict
@@ -67,8 +64,6 @@ def unigram_sampler(probs_dict):
 
     return '</s>'
 
-# model can be 'unigram', 'bigram' or 'trigram'
-#todo you can't generate a <s>
 def unigram_generator(probs_dict):
     eos = False
     i = 0
@@ -86,12 +81,9 @@ def unigram_generator(probs_dict):
 
 # probs_dict contains all the conditional probabilities, given_word could be w_i or <s>
 def bigram_sampler(probs_dict, given_word):
-    # cerco tutte le s e resittuisco la parola che viene dopo
     if given_word == '<s>':
         probs = {}
         for k, v in probs_dict.items():
-            #print(k,v)
-            # se c'è s come inner key
             if '<s>' in probs_dict[k]:
                     probs[k] = probs_dict[k]['<s>']
 
@@ -149,13 +141,10 @@ def trigram_generator(probs_dict, bigram_probs_dict):
     while not eos:
         if i == 0:
             w_j = trigram_sampler(probs_dict, bigram_probs_dict, first_given_word='<s>', second_given_word=None)
-            print('i = 0: wj = ', w_j)
         elif i == 1:
             w_j = trigram_sampler(probs_dict, bigram_probs_dict, first_given_word=w_list[i-1], second_given_word=None)
-            print('i = 1: wj = ', w_j)
         else:
             w_j = trigram_sampler(probs_dict, bigram_probs_dict, first_given_word=w_list[i-1], second_given_word=w_list[i-2])
-            print('i > 1: wj = ', w_j)
 
         if w_j != '<s>':
             w_list.append(w_j)

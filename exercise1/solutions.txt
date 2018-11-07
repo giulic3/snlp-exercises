@@ -2,7 +2,7 @@ Exercise 1
 
 a) See the functions remove_punctuation and preprocessing in ngram_models.py.
 
-b) See main in main.py.
+b) See the dictionaries unigram_prob, bigram_prob, trigram_prob in main.py.
 
 c) Given n the number of different words in the corpus, the number of parameters of these distributions scale:
 
