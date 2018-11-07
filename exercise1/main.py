@@ -9,11 +9,11 @@ def main():
     i = 0
     for line in corpus.readlines():
         wordslist += preprocessing(line)
-        if i >= 100: # for testing purposes
-            break
+        #if i >= 1000: # for testing purposes
+        #    break
         i += 1
 
-    '''
+        '''
     wordslist = [
     '<s>','ciao', 'a', 'tutti', 'amici', 'ciao', 'a', 'voi', 'tutti', '.', '</s>',
     '<s>','oggi', 'sono', 'molto', 'stanca', 'sono', 'molto', 'disperata', '.','</s>',
@@ -81,20 +81,19 @@ def main():
     # dict {w_i : p(w_i)}
     unigram_prob = dict(zip(wordslist, list(map(lambda freq: float(freq)/length, frequencies))))
 
-
     unigram_sentence = unigram_generator(probs_dict=unigram_prob)
     bigram_sample_start = bigram_sampler(probs_dict=bigram_prob, given_word='<s>')
     bigram_sample = bigram_sampler(probs_dict=bigram_prob, given_word='the')
 
     bigram_sentence = bigram_generator(probs_dict=bigram_prob)
-
+    '''
     trigram_sample_start = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='<s>', second_given_word=None)
-    trigram_sample_second = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='of', second_given_word=None)
-    trigram_sample = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='the', second_given_word='hello')
-
-    #trigram_sentence = trigram_generator(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='<s>')
+    trigram_sample_second = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='ciao', second_given_word=None)
+    trigram_sample = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='a', second_given_word='ciao')
+    '''
+    trigram_sentence = trigram_generator(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob)
     ##### CONTROL PRINTS #####
-    print('wordslist : ', wordslist, '\n')
+    #print('wordslist : ', wordslist, '\n')
     #print('unigram_dict :')
     #pprint(unigram_dict)
     #print('bigram_dict : ')
@@ -105,18 +104,16 @@ def main():
     #pprint(unigram_prob)
     #print('bigram_prob : ')
     #pprint(bigram_prob)
-    print('trigram_prob : ')
-    pprint(trigram_prob)
-    #print('the sentence generated with unigram is : ', unigram_sentence)
+    #print('trigram_prob : ')
+    #pprint(trigram_prob)
+    print(bcolors.OKBLUE + 'the sentence generated with unigram is : ' + bcolors.ENDC, unigram_sentence)
     #print('bigram_sample_start :', bigram_sample_start)
     #print('bigram_sample :', bigram_sample)
-    #print('the sentence generated with bigram is : ', bigram_sentence)
-    print('trigram_sample_start : ', trigram_sample_start)
-    print('trigram_sample_second : ', trigram_sample_second)
-    print('trigram_sample : ', trigram_sample)
-    #print('the sentence generated with trigram is : ', trigram_sentence)
-
-
+    print(bcolors.OKBLUE + 'the sentence generated with bigram is : ' + bcolors.ENDC, bigram_sentence)
+    #print('trigram_sample_start : ', trigram_sample_start)
+    #print('trigram_sample_second : ', trigram_sample_second)
+    #print('trigram_sample : ', trigram_sample)
+    print(bcolors.OKBLUE + 'the sentence generated with trigram is : '  + bcolors.ENDC, trigram_sentence)
 
 if __name__ == "__main__":
     start_time = time.time()

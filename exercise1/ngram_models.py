@@ -21,9 +21,9 @@ def remove_punctuation(line):
     line = line.replace(",", "")
     line = line.replace(";", "")
     line = line.replace(":", "")
-    line = line.replace("?", " ?")
-    line = line.replace("!", " !")
-    line = line.replace(".", " .")
+    line = line.replace("?", " </s>")
+    line = line.replace("!", " </s>")
+    line = line.replace(".", " </s>")
     return line
 
 def preprocessing(line):
@@ -31,7 +31,7 @@ def preprocessing(line):
     wordslist = line.split(" ")
     # add start and end of sentence markers
     wordslist.insert(0,'<s>')
-    wordslist.append('</s>')
+    #wordslist.append('</s>')
     wordslist = list(map(lambda word: word.lower(), wordslist))
 
     return wordslist
@@ -61,13 +61,11 @@ def unigram_sampler(probs_dict):
     sum = 0
     for i in range (0, len(probs)):
         sum = sum + probs[i][1] # the second value of the tuple is the value of the dict
-        #print(probs[i][1], sum)
-        #print(bcolors.WARNING + 'sum' + bcolors.ENDC, sum, 'x', x, "sum - x : ", sum - x)
         if sum - x >= 0:
             w_j = probs[i][0] # get the key, or the word
             return w_j
 
-    return
+    return '</s>'
 
 # model can be 'unigram', 'bigram' or 'trigram'
 #todo you can't generate a <s>
@@ -107,7 +105,7 @@ def bigram_sampler(probs_dict, given_word):
         w_j = unigram_sampler(probs)
         return w_j
 
-    return
+    return '</s>'
 
 def bigram_generator(probs_dict):
     eos = False
@@ -142,9 +140,9 @@ def trigram_sampler(probs_dict, bigram_probs_dict, first_given_word, second_give
         w_j = unigram_sampler(probs)
         return w_j
 
-    return
+    return '</s>'
 
-def trigram_generator(probs_dict, bigram_probs_dict, first_given_word):
+def trigram_generator(probs_dict, bigram_probs_dict):
     eos = False
     i = 0
     w_list = []

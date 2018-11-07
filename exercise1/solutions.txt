@@ -2,7 +2,7 @@ Exercise 1
 
 a) See the functions remove_punctuation and preprocessing in ngram_models.py.
 
-b) See function main content in main.py.
+b) See main in main.py.
 
 c) Given n the number of different words in the corpus, the number of parameters of these distributions scale:
 
@@ -18,4 +18,8 @@ a) See unigram_sampler, bigram_sampler and trigram_sampler in ngram_models.py.
 
 b) See unigram_generator, bigram_generator and trigram_generator in ngram_models.py
 
-c) Describing the results...
+c) The sentences generated become more meaningful in the language chosen if we increase the number of parameters. 
+The assumption of the unigram model, that is based on independence between words, and uses single probabilities instead of conditionals doesn't take into consideration how sentences are built in a certain language. 
+It is true indeed that in languages there are relationships (and not independence) between a word and the previous ones, depending on the category of words.
+For example in english, a determiner such as 'the' or 'a' is always followed buy a noun and an adjective often comes before a noun. So according to these syntactic rules, it is possible to observe that some pattern of words are more probable than others. 
+For these reasons, the bigram model and the trigram model progressively generate better sentences than the unigram (at a higher cost in complexity).
