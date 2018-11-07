@@ -82,14 +82,18 @@ def main():
     unigram_prob = dict(zip(wordslist, list(map(lambda freq: float(freq)/length, frequencies))))
 
 
-    unigram_sentence = unigram_generator(probs_dict = unigram_prob)
-    bigram_sample_start = bigram_sampler(probs_dict = bigram_prob, given_word = '<s>')
-    bigram_sample = bigram_sampler(probs_dict = bigram_prob, given_word = 'the')
+    unigram_sentence = unigram_generator(probs_dict=unigram_prob)
+    bigram_sample_start = bigram_sampler(probs_dict=bigram_prob, given_word='<s>')
+    bigram_sample = bigram_sampler(probs_dict=bigram_prob, given_word='the')
 
-    bigram_sentence = bigram_generator(probs_dict = bigram_prob)
+    bigram_sentence = bigram_generator(probs_dict=bigram_prob)
 
+    trigram_sample_start = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='<s>', second_given_word=None)
+    trigram_sample_second = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='of', second_given_word=None)
+    trigram_sample = trigram_sampler(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='the', second_given_word='hello')
+
+    #trigram_sentence = trigram_generator(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob, first_given_word='<s>')
     ##### CONTROL PRINTS #####
-
     print('wordslist : ', wordslist, '\n')
     #print('unigram_dict :')
     #pprint(unigram_dict)
@@ -99,14 +103,18 @@ def main():
     #pprint(trigram_dict)
     #print('unigram_prob :')
     #pprint(unigram_prob)
-    print('bigram_prob : ')
-    pprint(bigram_prob)
-    #print('trigram_prob : ')
-    #pprint(trigram_prob)
+    #print('bigram_prob : ')
+    #pprint(bigram_prob)
+    print('trigram_prob : ')
+    pprint(trigram_prob)
     #print('the sentence generated with unigram is : ', unigram_sentence)
-    print('bigram_sample_start :', bigram_sample_start)
-    print('bigram_sample :', bigram_sample)
-    print('the sentence generated with bigram is : ', bigram_sentence)
+    #print('bigram_sample_start :', bigram_sample_start)
+    #print('bigram_sample :', bigram_sample)
+    #print('the sentence generated with bigram is : ', bigram_sentence)
+    print('trigram_sample_start : ', trigram_sample_start)
+    print('trigram_sample_second : ', trigram_sample_second)
+    print('trigram_sample : ', trigram_sample)
+    #print('the sentence generated with trigram is : ', trigram_sentence)
 
 
 

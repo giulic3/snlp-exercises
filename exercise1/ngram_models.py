@@ -92,7 +92,7 @@ def bigram_sampler(probs_dict, given_word):
     if given_word == '<s>':
         probs = {}
         for k, v in probs_dict.items():
-            print(k,v)
+            #print(k,v)
             # se c'è s come inner key
             if '<s>' in probs_dict[k]:
                     probs[k] = probs_dict[k]['<s>']
@@ -125,6 +125,46 @@ def bigram_generator(probs_dict):
 
             if w_j == "</s>":
                 eos = True
+        i = i + 1
+
+    return w_list
+
+def trigram_sampler(probs_dict, bigram_probs_dict, first_given_word, second_given_word):
+    if second_given_word == None:
+        w_j = bigram_sampler(bigram_probs_dict, given_word=first_given_word)
+        return w_j
+    else: # both given words are != None
+        # generate w_i given wi_1 and w_i-2
+        probs = {}
+        for k, v in probs_dict.items():
+            if first_given_word in probs_dict[k] and second_given_word in probs_dict[k][first_given_word]:
+                    probs[k] = probs_dict[k][first_given_word][second_given_word]
+        w_j = unigram_sampler(probs)
+        return w_j
+
+    return
+
+def trigram_generator(probs_dict, bigram_probs_dict, first_given_word):
+    eos = False
+    i = 0
+    w_list = []
+    while not eos:
+        if i == 0:
+            w_j = trigram_sampler(probs_dict, bigram_probs_dict, first_given_word='<s>', second_given_word=None)
+            print('i = 0: wj = ', w_j)
+        elif i == 1:
+            w_j = trigram_sampler(probs_dict, bigram_probs_dict, first_given_word=w_list[i-1], second_given_word=None)
+            print('i = 1: wj = ', w_j)
+        else:
+            w_j = trigram_sampler(probs_dict, bigram_probs_dict, first_given_word=w_list[i-1], second_given_word=w_list[i-2])
+            print('i > 1: wj = ', w_j)
+
+        if w_j != '<s>':
+            w_list.append(w_j)
+
+        if w_j == "</s>":
+            eos = True
+
         i = i + 1
 
     return w_list
