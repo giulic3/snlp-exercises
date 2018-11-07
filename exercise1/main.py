@@ -9,12 +9,11 @@ def main():
     i = 0
     for line in corpus.readlines():
         wordslist += preprocessing(line)
-        if i >= 2: # for testing purposes
-            break
+        #if i >= 100: # for testing purposes
+        #    break
         i += 1
 
     #wordslist = ['ciao', 'a', 'tutti', 'amici', 'ciao', 'a', 'voi', 'tutti', '.']
-    print('wordslist : ', wordslist, '\n')
     length = len(wordslist) # corpus length
 
     ##### UNIGRAM #####
@@ -32,18 +31,14 @@ def main():
     # init frequency of the first word
     #bigram_dict[wordslist[0]][None] = unigram_dict[wordslist[0]]
     bigram_dict[wordslist[0]]['<s>'] = unigram_dict[wordslist[0]] # not sure TODO
+    # TODO this can be done without using the dict first
+    for j in range(1, length):
+        if wordslist[j-1] in bigram_dict[wordslist[j]]:
+            # increase frequency
+            bigram_dict[wordslist[j]][wordslist[j-1]] += 1
+        else:
+            bigram_dict[wordslist[j]][wordslist[j-1]] = 1
 
-    for w_i in unigram_dict:
-        for j in range(1, length):
-            if wordslist[j] == w_i:
-                if wordslist[j-1] in bigram_dict[w_i]:
-                    # increase frequency
-                    bigram_dict[w_i][wordslist[j-1]] += 1
-                else:
-                    bigram_dict[w_i][wordslist[j-1]] = 1
-
-    print('bigram_dict : ')
-    pprint(bigram_dict)
 
     ##### TRIGRAM #####
     # w_i : { wi_1 : { wi_2 : f(w_i,w_i-1,w_i-2)}}
@@ -54,17 +49,13 @@ def main():
     #init first two symbols TODO
     #bigram_dict[wordslist[0]]['<s>'] = unigram_dict[wordslist[0]] # not sure TODO
 
-    for w_i in unigram_dict:
-        for j in range(2, length):
-            if wordslist[j] == w_i:
-                if wordslist[j-1] in trigram_dict[w_i] and wordslist[j-2] in trigram_dict[w_i][wordslist[j-1]]:
-                    print(True)
-                    # increase frequency
-                    trigram_dict[w_i][wordslist[j-1]][wordslist[j-2]] += 1
-                else:
-                    trigram_dict[w_i][wordslist[j-1]]= {} # create the key first
-                    trigram_dict[w_i][wordslist[j-1]][wordslist[j-2]] = 1
-
+    for j in range(2, length):
+        if wordslist[j-1] in trigram_dict[wordslist[j]] and wordslist[j-2] in trigram_dict[wordslist[j]][wordslist[j-1]]:
+            # increase frequency
+            trigram_dict[wordslist[j]][wordslist[j-1]][wordslist[j-2]] += 1
+        else:
+            trigram_dict[wordslist[j]][wordslist[j-1]]= {} # create the key first
+            trigram_dict[wordslist[j]][wordslist[j-1]][wordslist[j-2]] = 1
     #print('trigram_dict : ')
     #pprint(trigram_dict)
 
@@ -94,6 +85,8 @@ def main():
     #print('index :', index, 'index2', index2)
 
     ##### CONTROL PRINTS #####
+    '''
+    print('wordslist : ', wordslist, '\n')
     print('unigram_dict :')
     pprint(unigram_dict)
     print('bigram_dict : ')
@@ -106,7 +99,7 @@ def main():
     pprint(bigram_prob)
     print('trigram_prob : ')
     pprint(trigram_prob)
-
+    '''
 if __name__ == "__main__":
     start_time = time.time()
     main()

@@ -1,0 +1,21 @@
+Exercise 1
+
+a) See the functions remove_punctuation and preprocessing in ngram_models.py.
+
+b) See function main content in main.py.
+
+c) Given n the number of different words in the corpus, the number of parameters of these distributions scale:
+
+- linearly in the unigram model, since the only parameters to be stored are the single probabilities with the associated word.
+
+- quadratically in the bigram model, given that for each word w the model stores the conditional probability of w given the previous word, chosen among the total number of words. This means that for a single word the parameters to store are n, multiplied by n because the process is repeated for all the words.
+
+- cubically in the trigram model, since the model stores the conditional probabilities considering also the word before the previous, in the same fashion as the bigram model.
+
+Exercise 2
+
+a) See unigram_sampler, bigram_sampler and trigram_sampler in ngram_models.py.
+
+b) See unigram_generator, bigram_generator and trigram_generator in ngram_models.py
+
+c) Describing the results...
