@@ -2,6 +2,8 @@
 ## SNLP exercise sheet 2
 ################################################################################
 
+from collections import Counter
+
 '''
 This function can be used for importing the corpus.
 Parameters: path_to_file: string; path to the file containing the corpus
@@ -11,25 +13,47 @@ def import_corpus(path_to_file):
     sentences = []
     sentence = []
     f = open(path_to_file)
-    
+
     while True:
         line = f.readline()
         if not line: break
-            
+
         line = line.strip()
         if len(line) == 0:
-            sentences.append(sentence)    
+            sentences.append(sentence)
             sentence = []
             continue
-                
+
         parts = line.split(' ')
         sentence.append((parts[0], parts[-1]))
-        
-    f.close()        
+
+    f.close()
     return sentences
-    
 
+'''
+Replace tokens occurring only once in the corpus by the token <unknown>.
+Parameters:	sentences; list of lists (where each element is a tuple)
+Returns: list of lists; a new data structure containing the sentences transformed after the preprocessing
+'''
+def preprocessing(sentences):
+    # First count number of occurrences for each token
+    # { token : number_of_occurrences }
+    occurrences = Counter()
+    for sentence in sentences:
+        for tuple in sentence:
+            occurrences[tuple[0]] += 1
 
+    # Then replace with token <unknown> when occurrence = 1
+    for sentence in sentences:
+        for tuple in sentence:
+            print(tuple[0])
+            num_of_occurrences = occurrences[tuple[0]]
+            print(num_of_occurrences)
+            if num_of_occurrences == 1:
+                tuple[0] = "<unknown>" #TypeError: 'tuple' object does not support item assignment
+                print('modified tuple: ', tuple)
+
+    return sentences
 
 # Exercise 1 ###################################################################
 '''
@@ -41,10 +65,10 @@ Returns: float; initial probability of the given state
 '''
 def initial_state_probabilities(state, internal_representation):
     pass
-    
-    
-    
-    
+
+
+
+
 '''
 Implement the matrix of transition probabilities.
 Parameters:	from_state: string;
@@ -55,10 +79,10 @@ Returns: float; probability of transition from_state -> to_state
 '''
 def transition_probabilities(from_state, to_state, internal_representation):
     pass
-    
-    
-    
-    
+
+
+
+
 '''
 Implement the matrix of emmision probabilities.
 Parameters:	state: string;
@@ -69,10 +93,10 @@ Returns: float; emission probability of the symbol emission_symbol if the curren
 '''
 def emission_probabilities(state, emission_symbol, internal_representation):
     pass
-    
-    
-    
-    
+
+
+
+
 '''
 Implement a function for estimating the parameters of the probability distribution of the initial states.
 Parameters: corpus: list returned by the function import_corpus
@@ -81,10 +105,10 @@ Returns: data structure containing the parameters of the probability distributio
 '''
 def estimate_initial_state_probabilities(corpus):
     pass
-    
-    
-    
-    
+
+
+
+
 '''
 Implement a function for estimating the parameters of the matrix of transition probabilities
 Parameters: corpus: list returned by the function import_corpus
@@ -93,10 +117,10 @@ Returns: data structure containing the parameters of the matrix of transition pr
 '''
 def estimate_transition_probabilities(corpus):
     pass
-    
-    
-    
-    
+
+
+
+
 '''
 Implement a function for estimating the parameters of the matrix of emission probabilities
 Parameters: corpus: list returned by the function import_corpus
@@ -105,12 +129,12 @@ Returns: data structure containing the parameters of the matrix of emission prob
 '''
 def estimate_transition_probabilities(corpus):
     pass
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
 # Exercise 2 ###################################################################
 ''''
 Implement the Viterbi algorithm for computing the most likely state sequence given a sequence of observed symbols.
@@ -122,18 +146,3 @@ Returns: list of strings; the most likely state sequence
 '''
 def most_likely_state_sequence(observed_smbols, initial_state_probabilities_parameters, transition_probabilities_parameters, emission_probabilities_parameters):
     pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
