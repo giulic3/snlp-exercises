@@ -114,19 +114,19 @@ def estimate_initial_state_probabilities(corpus):
     # Count the frequencies for the states/tokens at the beginning of a sentence
     frequencies = Counter()
     # { state/token : initial probability }
-    internal_representation = {}
-
-    for sentence in corpus:
-        first_tuple = sentence[0]
-        frequencies[first_tuple[0]] += 1
+    initial_state_probabilities = {}
     sum_frequencies = len(corpus)
 
     for sentence in corpus:
         first_tuple = sentence[0]
-        # If a key is missing that means that the associated probability is zero!
-        internal_representation[first_tuple[0]] = frequencies[first_tuple[0]] / float(sum_frequencies)
+        frequencies[first_tuple[1]] += 1
 
-    return internal_representation
+    for sentence in corpus:
+        first_tuple = sentence[0]
+        # If a key is missing that means that the associated probability is zero!
+        initial_state_probabilities[first_tuple[1]] = frequencies[first_tuple[1]] / float(sum_frequencies)
+
+    return initial_state_probabilities
 
 
 
@@ -138,8 +138,39 @@ Returns: data structure containing the parameters of the matrix of transition pr
             use this data structure for the argument internal_representation of the function transition_probabilities
 '''
 def estimate_transition_probabilities(corpus):
-    # Dizionario di frequenze { s1 : { sj : freq }}
+    # Frequencies dict { s1 : { sj : freq }}
+    transition_probabilities = {}
+    state_frequencies = Counter()
+    # Init outer level of the dict
+    for sentence in corpus:
+        for tuple in sentence:
+            transition_probabilities[tuple[1]] = {}
+    #pprint(transition_probabilities)
 
+    for sentence in corpus:
+        for i in range (len(sentence)-1):
+            if sentence[i+1][1] in transition_probabilities[sentence[i][1]]:
+                transition_probabilities[sentence[i][1]][sentence[i+1][1]] += 1
+            else:
+                transition_probabilities[sentence[i][1]][sentence[i+1][1]] = 1
+
+    # Count total frequencies for each label
+    for sentence in corpus:
+        for tuple in sentence:
+            state_frequencies[tuple[1]] += 1
+    print('state_frequencies: ', state_frequencies)
+
+    for s_i in transition_probabilities:
+        print(s_i)
+        for s_j in s_i:
+            #print(s_j)
+            # If a key is missing that means that the associated probability is zero!
+            if s_j in transition_probabilities[s_i]:
+                transition_probabilities[s_i][s_j] /= float(state_frequencies[s_i])
+
+    #TODO add a function to count total frequencies (the code is repeated)
+    print('transition_probabilities: ')
+    pprint(transition_probabilities)
 
 
 
