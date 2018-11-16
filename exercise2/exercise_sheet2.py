@@ -3,6 +3,7 @@
 ################################################################################
 
 from collections import Counter
+import time
 
 '''
 This function can be used for importing the corpus.
@@ -39,6 +40,9 @@ def preprocessing(sentences):
     # First count number of occurrences for each token
     # { token : number_of_occurrences }
     occurrences = Counter()
+    preprocessed_sentences = []
+    mod_sentence = []
+
     for sentence in sentences:
         for tuple in sentence:
             occurrences[tuple[0]] += 1
@@ -46,14 +50,15 @@ def preprocessing(sentences):
     # Then replace with token <unknown> when occurrence = 1
     for sentence in sentences:
         for tuple in sentence:
-            print(tuple[0])
             num_of_occurrences = occurrences[tuple[0]]
-            print(num_of_occurrences)
             if num_of_occurrences == 1:
-                tuple[0] = "<unknown>" #TypeError: 'tuple' object does not support item assignment
-                print('modified tuple: ', tuple)
+                mod_sentence.append(("<unknown>", tuple[1]))
+            else:
+                mod_sentence.append((tuple[0], tuple[1]))
+        preprocessed_sentences.append(mod_sentence)
+        mod_sentence = []
 
-    return sentences
+    return preprocessed_sentences
 
 # Exercise 1 ###################################################################
 '''
