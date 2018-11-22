@@ -158,6 +158,7 @@ def estimate_transition_probabilities(corpus):
             else:
                 transition_probabilities[sentence[i][1]][sentence[i+1][1]] = 1
 
+    # TODO remove from the count the ending states! namely, use the sum of single freqs to obtain the total
     # Count total frequencies for each label
     for sentence in corpus:
         for tuple in sentence:
@@ -214,15 +215,59 @@ def estimate_emission_probabilities(corpus):
 
     return emission_probabilities
 
+# TODO initialize sets S and O - they are needed for Viterbi!
+'''
+Parameters: corpus: list of lists (where each element is a tuple); the corpus of sentences
+Returns: set; set of all possible states in the corpus
+'''
+def get_states_set(corpus):
+    S = set()
+    for sentence in corpus:
+        for tuple in sentence:
+            S.add(tuple[1])
+
+    return S
+
+
+'''
+Parameters: corpus: list of strings; the corpus of sentences AFTER preprocessing
+Returns: set; set of all possible observations in the corpus
+'''
+def get_observations_set(corpus):
+    O = set()
+    for sentence in corpus:
+        for tuple in sentence:
+            O.add(tuple[0])
+
+    return O
+
 
 # Exercise 2 ###################################################################
 ''''
 Implement the Viterbi algorithm for computing the most likely state sequence given a sequence of observed symbols.
 Parameters: observed_symbols: list of strings; the sequence of observed symbols
-            initial_state_probabilities_parameters: data structure containing the parameters of the probability distribution of the initial states, returned by estimate_initial_state_probabilities
-            transition_probabilities_parameters: data structure containing the parameters of the matrix of transition probabilities, returned by estimate_transition_probabilities
-            emission_probabilities_parameters: data structure containing the parameters of the matrix of emission probabilities, returned by estimate_emission_probabilities
+            initial_state_probabilities_parameters: data structure containing
+            the parameters of the probability distribution of the initial states,
+            returned by estimate_initial_state_probabilities
+            transition_probabilities_parameters: data structure containing the parameters
+            of the matrix of transition probabilities, returned by estimate_transition_probabilities
+            emission_probabilities_parameters: data structure containing the parameters
+            of the matrix of emission probabilities, returned by estimate_emission_probabilities
+            states: set of all possible states according to the model
+            observations: set of all possible observations according to the model
 Returns: list of strings; the most likely state sequence
 '''
-def most_likely_state_sequence(observed_symbols, initial_state_probabilities_parameters, transition_probabilities_parameters, emission_probabilities_parameters):
-    pass
+# TODO if a word of the input doesn't occur, substitute with the word unknown and then use Viterbi on it!
+def most_likely_state_sequence(observed_symbols, initial_state_probabilities_parameters, transition_probabilities_parameters, emission_probabilities_parameters, states, observations):
+    # List of maximum values (probabilities)
+    delta = []
+    # List of argmax values (states corresponding to probabilities)
+    phi = []
+    # TODO fix: this is wrong
+    delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0])
+    phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(0), reverse=True)[0])
+
+    print(delta)
+    print(phi)
+
+    return phi
