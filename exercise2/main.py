@@ -8,7 +8,7 @@ def main():
     transition_probabilities = estimate_transition_probabilities(preprocessed_sentences)
 
     ##### CONTROL PRINTS #####
-    #print(sentences)
+    #print(bcolors.OKBLUE + 'sentences : ' + bcolors.ENDC, sentences)
 
     #pprint(sorted(initial_state_probabilities.items(), key=operator.itemgetter(1), reverse=True))
 

@@ -6,6 +6,16 @@ from collections import Counter
 import time, operator
 from pprint import pprint
 
+# Class used to format output and improve readability
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 '''
 This function can be used for importing the corpus.
@@ -32,6 +42,7 @@ def import_corpus(path_to_file):
 
     f.close()
     return sentences
+
 
 '''
 Replace tokens occurring only once in the corpus by the token <unknown>.
@@ -62,6 +73,7 @@ def preprocessing(sentences):
 
     return preprocessed_sentences
 
+
 # Exercise 1 ###################################################################
 '''
 Implement the probability distribution of the initial states.
@@ -72,8 +84,6 @@ Returns: float; initial probability of the given state
 '''
 def initial_state_probabilities(state, internal_representation):
     return internal_representation[state]
-
-
 
 
 '''
@@ -88,8 +98,6 @@ def transition_probabilities(from_state, to_state, internal_representation):
     return internal_representation[from_state][to_state]
 
 
-
-
 '''
 Implement the matrix of emission probabilities.
 Parameters:	state: string;
@@ -100,8 +108,6 @@ Returns: float; emission probability of the symbol emission_symbol if the curren
 '''
 def emission_probabilities(state, emission_symbol, internal_representation):
     return internal_representation[state][emission_symbol]
-
-
 
 
 '''
@@ -128,9 +134,7 @@ def estimate_initial_state_probabilities(corpus):
 
     return initial_state_probabilities
 
-
-
-
+# TODO do I need the probability to go from state to eos?
 '''
 Implement a function for estimating the parameters of the matrix of transition probabilities
 Parameters: corpus: list returned by the function import_corpus
@@ -146,7 +150,7 @@ def estimate_transition_probabilities(corpus):
         for tuple in sentence:
             transition_probabilities[tuple[1]] = {}
     #pprint(transition_probabilities)
-
+    # Compute frequencies
     for sentence in corpus:
         for i in range (len(sentence)-1):
             if sentence[i+1][1] in transition_probabilities[sentence[i][1]]:
@@ -158,20 +162,18 @@ def estimate_transition_probabilities(corpus):
     for sentence in corpus:
         for tuple in sentence:
             state_frequencies[tuple[1]] += 1
-    print('state_frequencies: ', state_frequencies)
+    print(bcolors.OKBLUE + 'state_frequencies: ' + bcolors.ENDC, state_frequencies)
 
     for s_i in transition_probabilities:
-        print(s_i)
-        for s_j in s_i:
-            #print(s_j)
+        print(bcolors.OKGREEN+'k/v ='+bcolors.ENDC, s_i, ' : ', transition_probabilities[s_i])
+        for s_j in transition_probabilities[s_i]:
+            print('s_j', s_j)
             # If a key is missing that means that the associated probability is zero!
-            if s_j in transition_probabilities[s_i]:
-                transition_probabilities[s_i][s_j] /= float(state_frequencies[s_i])
+            print(True)
+            transition_probabilities[s_i][s_j] /= float(state_frequencies[s_i])
 
-    #TODO add a function to count total frequencies (the code is repeated)
-    print('transition_probabilities: ')
+    print(bcolors.OKBLUE + 'transition_probabilities: ' + bcolors.ENDC)
     pprint(transition_probabilities)
-
 
 
 '''
@@ -182,10 +184,6 @@ Returns: data structure containing the parameters of the matrix of emission prob
 '''
 def estimate_emission_probabilities(corpus):
     pass
-
-
-
-
 
 
 # Exercise 2 ###################################################################
