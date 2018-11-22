@@ -162,19 +162,17 @@ def estimate_transition_probabilities(corpus):
     for sentence in corpus:
         for tuple in sentence:
             state_frequencies[tuple[1]] += 1
-    print(bcolors.OKBLUE + 'state_frequencies: ' + bcolors.ENDC, state_frequencies)
+    #print(bcolors.OKBLUE + 'state_frequencies: ' + bcolors.ENDC, state_frequencies)
 
     for s_i in transition_probabilities:
-        print(bcolors.OKGREEN+'k/v ='+bcolors.ENDC, s_i, ' : ', transition_probabilities[s_i])
+        #print(bcolors.OKGREEN+'k/v ='+bcolors.ENDC, s_i, ' : ', transition_probabilities[s_i])
         for s_j in transition_probabilities[s_i]:
-            print('s_j', s_j)
+            #print('s_j', s_j)
             # If a key is missing that means that the associated probability is zero!
-            print(True)
+            #print(True)
             transition_probabilities[s_i][s_j] /= float(state_frequencies[s_i])
 
-    print(bcolors.OKBLUE + 'transition_probabilities: ' + bcolors.ENDC)
-    pprint(transition_probabilities)
-
+    return transition_probabilities
 
 '''
 Implement a function for estimating the parameters of the matrix of emission probabilities
@@ -183,7 +181,38 @@ Returns: data structure containing the parameters of the matrix of emission prob
             use this data structure for the argument internal_representation of the function emission_probabilities
 '''
 def estimate_emission_probabilities(corpus):
-    pass
+    # Dict { label/state : { observation:prob }
+    emission_probabilities = {}
+    state_frequencies = Counter()
+
+    # Init outer level of the dict
+    for sentence in corpus:
+        for tuple in sentence:
+            emission_probabilities[tuple[1]] = {}
+
+    # Compute frequencies
+    for sentence in corpus:
+        for i in range (len(sentence)-1):
+            if sentence[i+1][0] in emission_probabilities[sentence[i][1]]:
+                emission_probabilities[sentence[i][1]][sentence[i+1][0]] += 1
+            else:
+                emission_probabilities[sentence[i][1]][sentence[i+1][0]] = 1
+
+    # Count total frequencies for each label
+    for sentence in corpus:
+        for tuple in sentence:
+            state_frequencies[tuple[1]] += 1
+
+    for s in emission_probabilities:
+        #print(bcolors.OKGREEN+'k/v ='+bcolors.ENDC, s, ' : ', emission_probabilities[s])
+        for obs in emission_probabilities[s]:
+            # If a key is missing that means that the associated probability is zero!
+            emission_probabilities[s][obs] /= float(state_frequencies[s])
+
+    print('emission probabilities: ')
+    #pprint(emission_probabilities)
+
+    return emission_probabilities
 
 
 # Exercise 2 ###################################################################
