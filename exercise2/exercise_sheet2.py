@@ -6,8 +6,9 @@ from collections import Counter
 import time, operator
 from pprint import pprint
 
+
 # Class used to format output and improve readability
-class bcolors:
+class Colors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -17,11 +18,14 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 '''
 This function can be used for importing the corpus.
 Parameters: path_to_file: string; path to the file containing the corpus
 Returns: list of list; the second layer list contains tuples (token,label);
 '''
+
+
 def import_corpus(path_to_file):
     sentences = []
     sentence = []
@@ -29,7 +33,8 @@ def import_corpus(path_to_file):
 
     while True:
         line = f.readline()
-        if not line: break
+        if not line:
+            break
 
         line = line.strip()
         if len(line) == 0:
@@ -49,6 +54,8 @@ Replace tokens occurring only once in the corpus by the token <unknown>.
 Parameters:	sentences; list of lists (where each element is a tuple)
 Returns: list of lists; a new data structure containing the sentences transformed after the preprocessing
 '''
+
+
 def preprocessing(sentences):
     # First count number of occurrences for each token
     # { token : number_of_occurrences }
@@ -82,6 +89,8 @@ Parameters:	state: string
                 this data structure is returned by the function estimate_initial_state_probabilities
 Returns: float; initial probability of the given state
 '''
+
+
 def initial_state_probabilities(state, internal_representation):
     return internal_representation[state]
 
@@ -94,6 +103,8 @@ Parameters:	from_state: string;
                 this data structure is returned by the function estimate_transition_probabilities
 Returns: float; probability of transition from_state -> to_state
 '''
+
+
 def transition_probabilities(from_state, to_state, internal_representation):
     return internal_representation[from_state][to_state]
 
@@ -106,6 +117,8 @@ Parameters:	state: string;
                 this data structure is returned by the function estimate_emission_probabilities
 Returns: float; emission probability of the symbol emission_symbol if the current state is state
 '''
+
+
 def emission_probabilities(state, emission_symbol, internal_representation):
     return internal_representation[state][emission_symbol]
 
@@ -116,6 +129,8 @@ Parameters: corpus: list returned by the function import_corpus
 Returns: data structure containing the parameters of the probability distribution of the initial states;
             use this data structure for the argument internal_representation of the function initial_state_probabilities
 '''
+
+
 def estimate_initial_state_probabilities(corpus):
     # Count the frequencies for the states/tokens at the beginning of a sentence
     frequencies = Counter()
@@ -134,6 +149,7 @@ def estimate_initial_state_probabilities(corpus):
 
     return initial_state_probabilities
 
+
 # TODO do I need the probability to go from state to eos?
 '''
 Implement a function for estimating the parameters of the matrix of transition probabilities
@@ -141,6 +157,8 @@ Parameters: corpus: list returned by the function import_corpus
 Returns: data structure containing the parameters of the matrix of transition probabilities;
             use this data structure for the argument internal_representation of the function transition_probabilities
 '''
+
+
 def estimate_transition_probabilities(corpus):
     # Frequencies dict { s1 : { sj : freq }}
     transition_probabilities = {}
@@ -149,7 +167,7 @@ def estimate_transition_probabilities(corpus):
     for sentence in corpus:
         for tuple in sentence:
             transition_probabilities[tuple[1]] = {}
-    #pprint(transition_probabilities)
+    # pprint(transition_probabilities)
     # Compute frequencies
     for sentence in corpus:
         for i in range (len(sentence)-1):
@@ -163,17 +181,18 @@ def estimate_transition_probabilities(corpus):
     for sentence in corpus:
         for tuple in sentence:
             state_frequencies[tuple[1]] += 1
-    #print(bcolors.OKBLUE + 'state_frequencies: ' + bcolors.ENDC, state_frequencies)
+    # print(Colors.OKBLUE + 'state_frequencies: ' + Colors.ENDC, state_frequencies)
 
     for s_i in transition_probabilities:
-        #print(bcolors.OKGREEN+'k/v ='+bcolors.ENDC, s_i, ' : ', transition_probabilities[s_i])
+        # print(Colors.OKGREEN+'k/v ='+Colors.ENDC, s_i, ' : ', transition_probabilities[s_i])
         for s_j in transition_probabilities[s_i]:
-            #print('s_j', s_j)
+            # print('s_j', s_j)
             # If a key is missing that means that the associated probability is zero!
-            #print(True)
+            # print(True)
             transition_probabilities[s_i][s_j] /= float(state_frequencies[s_i])
 
     return transition_probabilities
+
 
 '''
 Implement a function for estimating the parameters of the matrix of emission probabilities
@@ -181,6 +200,8 @@ Parameters: corpus: list returned by the function import_corpus
 Returns: data structure containing the parameters of the matrix of emission probabilities;
             use this data structure for the argument internal_representation of the function emission_probabilities
 '''
+
+
 def estimate_emission_probabilities(corpus):
     # Dict { label/state : { observation:prob }
     emission_probabilities = {}
@@ -205,21 +226,24 @@ def estimate_emission_probabilities(corpus):
             state_frequencies[tuple[1]] += 1
 
     for s in emission_probabilities:
-        #print(bcolors.OKGREEN+'k/v ='+bcolors.ENDC, s, ' : ', emission_probabilities[s])
+        # print(Colors.OKGREEN+'k/v ='+Colors.ENDC, s, ' : ', emission_probabilities[s])
         for obs in emission_probabilities[s]:
             # If a key is missing that means that the associated probability is zero!
             emission_probabilities[s][obs] /= float(state_frequencies[s])
 
     print('emission probabilities: ')
-    #pprint(emission_probabilities)
+    # pprint(emission_probabilities)
 
     return emission_probabilities
+
 
 # TODO initialize sets S and O - they are needed for Viterbi!
 '''
 Parameters: corpus: list of lists (where each element is a tuple); the corpus of sentences
 Returns: set; set of all possible states in the corpus
 '''
+
+
 def get_states_set(corpus):
     S = set()
     for sentence in corpus:
@@ -233,6 +257,8 @@ def get_states_set(corpus):
 Parameters: corpus: list of strings; the corpus of sentences AFTER preprocessing
 Returns: set; set of all possible observations in the corpus
 '''
+
+
 def get_observations_set(corpus):
     O = set()
     for sentence in corpus:
@@ -257,17 +283,26 @@ Parameters: observed_symbols: list of strings; the sequence of observed symbols
             observations: set of all possible observations according to the model
 Returns: list of strings; the most likely state sequence
 '''
+
+
 # TODO if a word of the input doesn't occur, substitute with the word unknown and then use Viterbi on it!
-def most_likely_state_sequence(observed_symbols, initial_state_probabilities_parameters, transition_probabilities_parameters, emission_probabilities_parameters, states, observations):
+def most_likely_state_sequence(observed_symbols, initial_state_probabilities_parameters,
+                               transition_probabilities_parameters, emission_probabilities_parameters, states, observations):
     # List of maximum values (probabilities)
     delta = []
     # List of argmax values (states corresponding to probabilities)
     phi = []
-    # TODO fix: this is wrong
-    delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0])
-    phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(0), reverse=True)[0])
+    print("observed_symbols BEFORE pre-processing: ", observed_symbols)
+    for index, word in enumerate(observed_symbols):
+        if word not in observations:
+            observed_symbols[index] = "<unknown>"
 
-    print(delta)
-    print(phi)
+    print("observed_symbols AFTER pre-processing: ", observed_symbols)
+
+    delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][1])
+    phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][0])
+
+    print('delta: ', delta)
+    print('phi: ', phi)
 
     return phi

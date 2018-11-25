@@ -67,9 +67,9 @@ def main():
     bigram_sentence = bigram_generator(probs_dict=bigram_prob)
     trigram_sentence = trigram_generator(probs_dict=trigram_prob, bigram_probs_dict=bigram_prob)
 
-    print(bcolors.OKBLUE + 'the sentence generated with unigram is : ' + bcolors.ENDC, unigram_sentence)
-    print(bcolors.OKBLUE + 'the sentence generated with bigram is : ' + bcolors.ENDC, bigram_sentence)
-    print(bcolors.OKBLUE + 'the sentence generated with trigram is : '  + bcolors.ENDC, trigram_sentence)
+    print(Colors.OKBLUE + 'the sentence generated with unigram is : ' + Colors.ENDC, unigram_sentence)
+    print(Colors.OKBLUE + 'the sentence generated with bigram is : ' + Colors.ENDC, bigram_sentence)
+    print(Colors.OKBLUE + 'the sentence generated with trigram is : '  + Colors.ENDC, trigram_sentence)
 
 if __name__ == "__main__":
     start_time = time.time()
