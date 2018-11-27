@@ -231,7 +231,7 @@ def estimate_emission_probabilities(corpus):
             # If a key is missing that means that the associated probability is zero!
             emission_probabilities[s][obs] /= float(state_frequencies[s])
 
-    print('emission probabilities: ')
+    # print('emission probabilities: ')
     # pprint(emission_probabilities)
 
     return emission_probabilities
@@ -292,7 +292,8 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
     delta = []
     # List of argmax values (states corresponding to probabilities)
     phi = []
-    print("observed_symbols BEFORE pre-processing: ", observed_symbols)
+
+    # print("observed_symbols BEFORE pre-processing: ", observed_symbols)
     for index, word in enumerate(observed_symbols):
         if word not in observations:
             observed_symbols[index] = "<unknown>"
@@ -301,6 +302,25 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
 
     delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][1])
     phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][0])
+
+    tmp_max = -1
+    tmp_argmax = ""
+    i = 0
+    # Loop skipping the first element
+    for word in observed_symbols[1:]:
+        for state in states:
+            try:
+                prob_value = delta[i] * transition_probabilities_parameters[phi[i]][state] * emission_probabilities_parameters[state][word]
+
+                if prob_value > tmp_max:
+                    tmp_max = prob_value
+                    tmp_argmax = state
+            except KeyError as e:
+                prob_value = 0
+
+        delta.append(tmp_max)
+        phi.append(tmp_argmax)
+        i = i + 1
 
     print('delta: ', delta)
     print('phi: ', phi)

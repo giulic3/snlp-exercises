@@ -12,6 +12,8 @@ def main():
     observations = get_observations_set(preprocessed_sentences)
 
     observed_sentence = ["The", "man", "loves", "the", "cat"]
+    # observed_sentence = ["Syria", "had", "taken", "the", "lead"]
+    # observed_sentence = ["FREESTYLE", "SKIING-WORLD", "CUP", "MOGUL", "RESULTS"]
     viterbi_state_sequence = most_likely_state_sequence(
         observed_sentence, initial_state_probabilities, transition_probabilities,
         emission_probabilities, states, observations)
