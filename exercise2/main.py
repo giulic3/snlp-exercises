@@ -3,7 +3,8 @@ from exercise_sheet2 import *
 
 def main():
 
-    sentences = import_corpus("./corpus_ner.txt")
+    # sentences = import_corpus("./corpus_ner.txt")
+    sentences = import_corpus("./corpus_gattocane.txt")
     preprocessed_sentences = preprocessing(sentences)
     initial_state_probabilities = estimate_initial_state_probabilities(preprocessed_sentences)
     transition_probabilities = estimate_transition_probabilities(preprocessed_sentences)
@@ -11,7 +12,7 @@ def main():
     states = get_states_set(preprocessed_sentences)
     observations = get_observations_set(preprocessed_sentences)
 
-    observed_sentence = ["The", "man", "loves", "the", "cat"]
+    observed_sentence = ["The", "man", "loves", "the", "woman"]
     # observed_sentence = ["Syria", "had", "taken", "the", "lead"]
     # observed_sentence = ["FREESTYLE", "SKIING-WORLD", "CUP", "MOGUL", "RESULTS"]
     viterbi_state_sequence = most_likely_state_sequence(
@@ -20,12 +21,13 @@ def main():
 
     # CONTROL PRINTS
     # print(Colors.OKBLUE + 'sentences : ' + Colors.ENDC, sentences)
-
-    # pprint(sorted(initial_state_probabilities.items(), key=operator.itemgetter(1), reverse=True))
-    # print(Colors.OKBLUE + 'transition_probabilities: ' + Colors.ENDC)
-    # pprint(transition_probabilities)
-    # print(Colors.OKBLUE + 'emission_probabilities: ' + Colors.ENDC)
-    # pprint(emission_probabilities)
+    print(Colors.OKBLUE + 'initial_state_probabilities: ' + Colors.ENDC
+          )
+    pprint(sorted(initial_state_probabilities.items(), key=operator.itemgetter(1), reverse=True))
+    print(Colors.OKBLUE + 'transition_probabilities: ' + Colors.ENDC)
+    pprint(transition_probabilities)
+    print(Colors.OKBLUE + 'emission_probabilities: ' + Colors.ENDC)
+    pprint(emission_probabilities)
     print('viterbi_state_sequence: ', viterbi_state_sequence)
 
     return

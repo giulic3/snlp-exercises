@@ -292,7 +292,10 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
     delta = []
     # List of argmax values (states corresponding to probabilities)
     phi = []
-
+    # Init trellis matrix
+    num_rows, num_columns = len(states), len(observed_symbols)
+    trellis = [[0 for j in range(num_columns)] for i in range(num_rows)]
+    # TODO : maybe a need a list for states and not a set...
     # print("observed_symbols BEFORE pre-processing: ", observed_symbols)
     for index, word in enumerate(observed_symbols):
         if word not in observations:
@@ -300,29 +303,41 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
 
     print("observed_symbols AFTER pre-processing: ", observed_symbols)
 
-    delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][1])
-    phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][0])
+    print(Colors.OKGREEN + 'trellis: ' + Colors.ENDC)
+    pprint(trellis)
 
-    tmp_max = -1
+    #delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][1])
+    #phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][0])
+
+    tmp_max = 0
     tmp_argmax = ""
     i = 0
+
+    for i in range(num_rows):
+        for j in range(num_columns):
+            try:
+                prob_value = trellis[i][j-1] * transition_probabilities_parameters[phi[i]][states[i]] * \
+                             emission_probabilities_parameters[states[i]][observed_symbols[j]]
+            except KeyError as e:
+                print(e)
     # Loop skipping the first element
     for word in observed_symbols[1:]:
         for state in states:
-            try:
-                prob_value = delta[i] * transition_probabilities_parameters[phi[i]][state] * emission_probabilities_parameters[state][word]
+            for state in states:
+                try:
+                    prob_value = delta[i] * transition_probabilities_parameters[phi[i]][state] * emission_probabilities_parameters[state][word]
 
-                if prob_value > tmp_max:
-                    tmp_max = prob_value
-                    tmp_argmax = state
-            except KeyError as e:
-                prob_value = 0
+                    if prob_value > tmp_max:
+                        tmp_max = prob_value
+                        tmp_argmax = state
+                except KeyError as e:
+                    prob_value = 0
 
         delta.append(tmp_max)
         phi.append(tmp_argmax)
         i = i + 1
 
-    print('delta: ', delta)
-    print('phi: ', phi)
+    print(Colors.OKGREEN + 'delta: ' + Colors.ENDC, delta)
+    print(Colors.OKGREEN + 'phi: ' + Colors.ENDC, phi)
 
     return phi
