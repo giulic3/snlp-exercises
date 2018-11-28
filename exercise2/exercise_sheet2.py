@@ -4,8 +4,9 @@
 
 from collections import Counter
 import time, operator
+from operator import itemgetter
 from pprint import pprint
-
+from math import log
 
 # Class used to format output and improve readability
 class Colors:
@@ -237,35 +238,44 @@ def estimate_emission_probabilities(corpus):
     return emission_probabilities
 
 
-# TODO initialize sets S and O - they are needed for Viterbi!
 '''
 Parameters: corpus: list of lists (where each element is a tuple); the corpus of sentences
-Returns: set; set of all possible states in the corpus
+Returns: list; list containing of all possible states in the corpus
 '''
 
 
 def get_states_set(corpus):
     S = set()
+    states = []
+
     for sentence in corpus:
         for tuple in sentence:
             S.add(tuple[1])
 
-    return S
+    for item in S:
+        states.append(item)
+
+    return states
 
 
 '''
 Parameters: corpus: list of strings; the corpus of sentences AFTER preprocessing
-Returns: set; set of all possible observations in the corpus
+Returns: list; list containing of all possible observations in the corpus
 '''
 
 
 def get_observations_set(corpus):
     O = set()
+    observations = []
+
     for sentence in corpus:
         for tuple in sentence:
             O.add(tuple[0])
 
-    return O
+    for item in O:
+        observations.append(item)
+
+    return observations
 
 
 # Exercise 2 ###################################################################
@@ -285,7 +295,6 @@ Returns: list of strings; the most likely state sequence
 '''
 
 
-# TODO if a word of the input doesn't occur, substitute with the word unknown and then use Viterbi on it!
 def most_likely_state_sequence(observed_symbols, initial_state_probabilities_parameters,
                                transition_probabilities_parameters, emission_probabilities_parameters, states, observations):
     # List of maximum values (probabilities)
@@ -294,8 +303,8 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
     phi = []
     # Init trellis matrix
     num_rows, num_columns = len(states), len(observed_symbols)
-    trellis = [[0 for j in range(num_columns)] for i in range(num_rows)]
-    # TODO : maybe a need a list for states and not a set...
+    trellis = [[float(0) for j in range(num_columns)] for i in range(num_rows)]
+
     # print("observed_symbols BEFORE pre-processing: ", observed_symbols)
     for index, word in enumerate(observed_symbols):
         if word not in observations:
@@ -303,40 +312,46 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
 
     print("observed_symbols AFTER pre-processing: ", observed_symbols)
 
-    print(Colors.OKGREEN + 'trellis: ' + Colors.ENDC)
+    print(Colors.OKGREEN + 'trellis BEFORE: ' + Colors.ENDC)
     pprint(trellis)
 
-    #delta.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][1])
-    #phi.append(sorted(initial_state_probabilities_parameters.items(), key=operator.itemgetter(1), reverse=True)[0][0])
-
-    tmp_max = 0
-    tmp_argmax = ""
-    i = 0
-
     for i in range(num_rows):
-        for j in range(num_columns):
-            try:
-                prob_value = trellis[i][j-1] * transition_probabilities_parameters[phi[i]][states[i]] * \
-                             emission_probabilities_parameters[states[i]][observed_symbols[j]]
-            except KeyError as e:
-                print(e)
-    # Loop skipping the first element
-    for word in observed_symbols[1:]:
-        for state in states:
-            for state in states:
+        try:
+            trellis[i][0] = log(initial_state_probabilities_parameters[states[i]])
+        except KeyError as e:
+            print(Colors.WARNING + 'KeyError exception, initial_state_probabilities_parameters' + Colors.ENDC, e)
+
+    for k in range(1, num_columns):  # symbols
+
+        tmp_max_column = []
+        tmp_argmax_column = []
+
+        for i in range(num_rows):  # states s_i
+            for j in range(num_rows):  # states s_j
                 try:
-                    prob_value = delta[i] * transition_probabilities_parameters[phi[i]][state] * emission_probabilities_parameters[state][word]
-
-                    if prob_value > tmp_max:
-                        tmp_max = prob_value
-                        tmp_argmax = state
+                    a = log(transition_probabilities_parameters[states[j]][states[i]])
                 except KeyError as e:
-                    prob_value = 0
+                    # print(Colors.WARNING + 'KeyError exception, in computing trellis' + Colors.ENDC, e)
+                    a = 0
+                    # a = -30000
+                try:
+                    b = log(emission_probabilities_parameters[states[i]][observed_symbols[k]])
+                except KeyError as e:
+                    # print(Colors.WARNING + 'KeyError exception, in computing trellis' + Colors.ENDC, e)
+                    b = 0
+                    # b = -30000
+                tmp_max_column.append(trellis[j][k-1] + a + b)
 
-        delta.append(tmp_max)
-        phi.append(tmp_argmax)
-        i = i + 1
+            trellis[i][k] = max(tmp_max_column)
+            index = tmp_max_column.index(trellis[i][k])
+            # TODO this line doesn't work!
+            #index, trellis[i][k] = max(enumerate(tmp_max_column), key=itemgetter(1))
+            tmp_argmax_column.append(states[index])  # this gives me the argmax, namely the label/state
 
+        phi.append(max([item for item in tmp_argmax_column]))
+
+    print(Colors.OKGREEN + 'trellis AFTER: ' + Colors.ENDC)
+    pprint(trellis)
     print(Colors.OKGREEN + 'delta: ' + Colors.ENDC, delta)
     print(Colors.OKGREEN + 'phi: ' + Colors.ENDC, phi)
 
