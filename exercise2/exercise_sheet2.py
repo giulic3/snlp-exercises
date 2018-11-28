@@ -3,7 +3,6 @@
 ################################################################################
 
 from collections import Counter
-from pprint import pprint
 from math import log
 
 
@@ -74,11 +73,31 @@ def preprocessing(sentences):
             if num_of_occurrences == 1:
                 mod_sentence.append(("<unknown>", tuple[1]))
             else:
-                mod_sentence.append((tuple[0], tuple[1]))
+                # Tranform all observations into lowercase
+                mod_sentence.append((tuple[0].lower(), tuple[1]))
+                # mod_sentence.append((tuple[0], tuple[1]))
+
         preprocessed_sentences.append(mod_sentence)
         mod_sentence = []
 
     return preprocessed_sentences
+
+
+'''
+Parameters: sentences: list of lists; the corpus of sentences AFTER pre-processing
+            n: number of pops on the sentences list
+Returns: list; list containing the sentence on which to perform the test
+'''
+
+
+def get_test_sentence(sentences, n):
+    last_sentence = []
+
+    while n > 0:
+        last_sentence = sentences.pop()
+        n = n - 1
+
+    return last_sentence
 
 
 # Exercise 1 ###################################################################
@@ -175,19 +194,14 @@ def estimate_transition_probabilities(corpus):
             else:
                 transition_probabilities[sentence[i][1]][sentence[i+1][1]] = 1
 
-    # TODO remove from the count the ending states! namely, use the sum of single freqs to obtain the total
     # Count total frequencies for each label
     for sentence in corpus:
         for tuple in sentence:
             state_frequencies[tuple[1]] += 1
-    # print(Colors.OKBLUE + 'state_frequencies: ' + Colors.ENDC, state_frequencies)
 
     for s_i in transition_probabilities:
-        # print(Colors.OKGREEN+'k/v ='+Colors.ENDC, s_i, ' : ', transition_probabilities[s_i])
         for s_j in transition_probabilities[s_i]:
-            # print('s_j', s_j)
             # If a key is missing that means that the associated probability is zero!
-            # print(True)
             transition_probabilities[s_i][s_j] /= float(state_frequencies[s_i])
 
     return transition_probabilities
@@ -213,11 +227,11 @@ def estimate_emission_probabilities(corpus):
 
     # Compute frequencies
     for sentence in corpus:
-        for i in range (len(sentence)-1):
-            if sentence[i+1][0] in emission_probabilities[sentence[i][1]]:
-                emission_probabilities[sentence[i][1]][sentence[i+1][0]] += 1
+        for i in range(len(sentence)):
+            if sentence[i][0] in emission_probabilities[sentence[i][1]]:
+                emission_probabilities[sentence[i][1]][sentence[i][0]] += 1
             else:
-                emission_probabilities[sentence[i][1]][sentence[i+1][0]] = 1
+                emission_probabilities[sentence[i][1]][sentence[i][0]] = 1
 
     # Count total frequencies for each label
     for sentence in corpus:
@@ -225,13 +239,9 @@ def estimate_emission_probabilities(corpus):
             state_frequencies[tuple[1]] += 1
 
     for s in emission_probabilities:
-        # print(Colors.OKGREEN+'k/v ='+Colors.ENDC, s, ' : ', emission_probabilities[s])
         for obs in emission_probabilities[s]:
             # If a key is missing that means that the associated probability is zero!
             emission_probabilities[s][obs] /= float(state_frequencies[s])
-
-    # print('emission probabilities: ')
-    # pprint(emission_probabilities)
 
     return emission_probabilities
 
@@ -305,14 +315,11 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
         if word not in observations:
             observed_symbols[index] = "<unknown>"
 
-    print(Colors.OKGREEN + 'trellis BEFORE: ' + Colors.ENDC)
-    pprint(trellis)
-
     for i in range(num_rows):
         try:
             trellis[i][0] = log(initial_state_probabilities_parameters[states[i]])
         except KeyError as e:
-            print(Colors.WARNING + 'KeyError exception, initial_state_probabilities_parameters' + Colors.ENDC, e)
+            # print(Colors.WARNING + 'KeyError exception, initial_state_probabilities_parameters' + Colors.ENDC, e)
             trellis[i][0] = float("-inf")
 
     trellis_first_column = [trellis[i][0] for i in range(num_rows)]
@@ -344,7 +351,5 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
         # Store in phi the label/state corresponding to the index associated to the max value
         phi.append(states[delta.index(max(delta))])
 
-    print(Colors.OKGREEN + 'trellis AFTER: ' + Colors.ENDC)
-    pprint(trellis)
-
     return phi
+
