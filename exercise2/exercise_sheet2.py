@@ -3,10 +3,9 @@
 ################################################################################
 
 from collections import Counter
-import time, operator
-from operator import itemgetter
 from pprint import pprint
 from math import log
+
 
 # Class used to format output and improve readability
 class Colors:
@@ -86,7 +85,7 @@ def preprocessing(sentences):
 '''
 Implement the probability distribution of the initial states.
 Parameters:	state: string
-            internal_representation: data structure representing the parameterization of this probability distribution;
+            internal_representation: data structure representing the parametrization of this probability distribution;
                 this data structure is returned by the function estimate_initial_state_probabilities
 Returns: float; initial probability of the given state
 '''
@@ -151,7 +150,6 @@ def estimate_initial_state_probabilities(corpus):
     return initial_state_probabilities
 
 
-# TODO do I need the probability to go from state to eos?
 '''
 Implement a function for estimating the parameters of the matrix of transition probabilities
 Parameters: corpus: list returned by the function import_corpus
@@ -168,7 +166,7 @@ def estimate_transition_probabilities(corpus):
     for sentence in corpus:
         for tuple in sentence:
             transition_probabilities[tuple[1]] = {}
-    # pprint(transition_probabilities)
+
     # Compute frequencies
     for sentence in corpus:
         for i in range (len(sentence)-1):
@@ -297,20 +295,15 @@ Returns: list of strings; the most likely state sequence
 
 def most_likely_state_sequence(observed_symbols, initial_state_probabilities_parameters,
                                transition_probabilities_parameters, emission_probabilities_parameters, states, observations):
-    # List of maximum values (probabilities)
-    delta = []
     # List of argmax values (states corresponding to probabilities)
     phi = []
     # Init trellis matrix
     num_rows, num_columns = len(states), len(observed_symbols)
     trellis = [[float(0) for j in range(num_columns)] for i in range(num_rows)]
 
-    # print("observed_symbols BEFORE pre-processing: ", observed_symbols)
     for index, word in enumerate(observed_symbols):
         if word not in observations:
             observed_symbols[index] = "<unknown>"
-
-    print("observed_symbols AFTER pre-processing: ", observed_symbols)
 
     print(Colors.OKGREEN + 'trellis BEFORE: ' + Colors.ENDC)
     pprint(trellis)
@@ -320,39 +313,38 @@ def most_likely_state_sequence(observed_symbols, initial_state_probabilities_par
             trellis[i][0] = log(initial_state_probabilities_parameters[states[i]])
         except KeyError as e:
             print(Colors.WARNING + 'KeyError exception, initial_state_probabilities_parameters' + Colors.ENDC, e)
+            trellis[i][0] = float("-inf")
+
+    trellis_first_column = [trellis[i][0] for i in range(num_rows)]
+    phi.append(states[trellis_first_column.index(max(trellis_first_column))])
 
     for k in range(1, num_columns):  # symbols
 
-        tmp_max_column = []
-        tmp_argmax_column = []
+        delta = []
 
         for i in range(num_rows):  # states s_i
+            tmp_max_column = []
             for j in range(num_rows):  # states s_j
+
                 try:
                     a = log(transition_probabilities_parameters[states[j]][states[i]])
                 except KeyError as e:
-                    # print(Colors.WARNING + 'KeyError exception, in computing trellis' + Colors.ENDC, e)
-                    a = 0
-                    # a = -30000
+                    a = float("-inf")
+
                 try:
                     b = log(emission_probabilities_parameters[states[i]][observed_symbols[k]])
                 except KeyError as e:
-                    # print(Colors.WARNING + 'KeyError exception, in computing trellis' + Colors.ENDC, e)
-                    b = 0
-                    # b = -30000
+                    b = float("-inf")
+
                 tmp_max_column.append(trellis[j][k-1] + a + b)
-
+            # Store in the trellis the max value for each s_j, given a s_i
             trellis[i][k] = max(tmp_max_column)
-            index = tmp_max_column.index(trellis[i][k])
-            # TODO this line doesn't work!
-            #index, trellis[i][k] = max(enumerate(tmp_max_column), key=itemgetter(1))
-            tmp_argmax_column.append(states[index])  # this gives me the argmax, namely the label/state
+            delta.append(trellis[i][k])
 
-        phi.append(max([item for item in tmp_argmax_column]))
+        # Store in phi the label/state corresponding to the index associated to the max value
+        phi.append(states[delta.index(max(delta))])
 
     print(Colors.OKGREEN + 'trellis AFTER: ' + Colors.ENDC)
     pprint(trellis)
-    print(Colors.OKGREEN + 'delta: ' + Colors.ENDC, delta)
-    print(Colors.OKGREEN + 'phi: ' + Colors.ENDC, phi)
 
     return phi
