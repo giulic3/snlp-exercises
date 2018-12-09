@@ -4,6 +4,19 @@
 import math
 import sys
 import numpy as np
+import pprint
+
+
+# Class used to format output and improve readability
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 '''
@@ -12,6 +25,8 @@ Parameters: path_to_file: string; path to the file containing the corpus
 Returns: list of list; the first layer list contains the sentences of the corpus;
     the second layer list contains tuples (token,label) representing a labelled sentence
 '''
+
+
 def import_corpus(path_to_file):
     sentences = []
     sentence = []
@@ -34,11 +49,9 @@ def import_corpus(path_to_file):
     return sentences
 
 
-
-
 class MaxEntModel(object):
     # training corpus
-    corpus = None
+    corpus = import_corpus('./corpus_pos.txt')
     
     # (numpy) array containing the parameters of the model
     # has to be initialized by the method 'initialize'
@@ -46,149 +59,168 @@ class MaxEntModel(object):
     
     # dictionary containing all possible features of a corpus and their corresponding index;
     # has to be set by the method 'initialize'; hint: use a Python dictionary
+    # { (word:label) : index }
     feature_indices = None
     
-    # set containing a list of possible lables
+    # set containing a list of possible labels
     # has to be set by the method 'initialize'
     labels = None
-    
-    
+
     # Exercise 1 a) ###################################################################
+    '''
+    Initialize the maximum entropy model, i.e., build the set of all features, the set of all labels
+    and create an initial array 'theta' for the parameters of the model.
+    Parameters: corpus: list of list representing the corpus, returned by the function 'import_corpus'
+    '''
+
     def initialize(self, corpus):
-        '''
-        Initialize the maximun entropy model, i.e., build the set of all features, the set of all labels
-        and create an initial array 'theta' for the parameters of the model.
-        Parameters: corpus: list of list representing the corpus, returned by the function 'import_corpus'
-        '''
+        # (the, DT), (dog, NN)
         self.corpus = corpus
-        
-        # your code here
-    
-    
-    
-    
+        # set of all words
+        X = set()
+        # set of features as tuples
+        F = set()
+        F_list = []
+
+        # fill the sets with elements
+        self.labels.add('start')
+        for sentence in corpus:
+            for pair in sentence:
+                X.add(pair[0])
+                self.labels.add(pair[1])
+
+        # build the set F of all features
+        for word in X:
+            for label in self.labels:
+                F.add((word, label))
+        for first_label in self.labels:
+            for second_label in self.labels:
+                F.add((first_label, second_label))
+
+        for feature in F:
+            F_list.append(feature)
+        # TODO serve un dizionario annidato?
+        # store features and their indices into a dictionary
+        for index in range(0, len(F_list)):
+            self.feature_indices[F_list[index]] = index
+
+        self.theta = np.ones((len(F_list),), dtype=int)
+
+        print(self.corpus)
+        print()
+        pprint(self.feature_indices)
+
+        # initialize the vector of parameters
+
+
     # Exercise 1 b) ###################################################################
+    '''
+    Compute the vector of active features.
+    Parameters: word: string; a word at some position i of a given sentence
+                label: string; a label assigned to the given word
+                prev_label: string; the label of the word at position i-1
+    Returns: (numpy) array containing only zeros and ones.
+    '''
+
     def get_active_features(self, word, label, prev_label):
-        '''
-        Compute the vector of active features.
-        Parameters: word: string; a word at some position i of a given sentence
-                    label: string; a label assigned to the given word
-                    prev_label: string; the label of the word at position i-1
-        Returns: (numpy) array containing only zeros and ones.
-        '''
-        
+
         # your code here
         
         pass
-        
-
-
 
     # Exercise 2 a) ###################################################################
+    '''
+    Compute the normalization factor 1/Z(x_i).
+    Parameters: word: string; a word x_i at some position i of a given sentence
+                prev_label: string; the label of the word at position i-1
+    Returns: float
+    '''
+
     def cond_normalization_factor(self, word, prev_label):
-        '''
-        Compute the normalization factor 1/Z(x_i).
-        Parameters: word: string; a word x_i at some position i of a given sentence
-                    prev_label: string; the label of the word at position i-1
-        Returns: float
-        '''
         
         # your code here
         
         pass
-    
-    
-    
-    
+
     # Exercise 2 b) ###################################################################
+    '''
+     Compute the conditional probability of a label given a word x_i.
+     Parameters: label: string; we are interested in the conditional probability of this label
+                 word: string; a word x_i some position i of a given sentence
+                 prev_label: string; the label of the word at position i-1
+     Returns: float
+     '''
+
     def conditional_probability(self, label, word, prev_label):
-        '''
-        Compute the conditional probability of a label given a word x_i.
-        Parameters: label: string; we are interested in the conditional probability of this label
-                    word: string; a word x_i some position i of a given sentence
-                    prev_label: string; the label of the word at position i-1
-        Returns: float
-        '''
-        
-        # your code here    
-    
-    
-    
-    
+
+        # your code here
+        pass
+
     # Exercise 3 a) ###################################################################
+    '''
+    Compute the empirical feature count given a word, the actual label of this word and the label of the previous word.
+    Parameters: word: string; a word x_i some position i of a given sentence
+                label: string; the actual label of the given word
+                prev_label: string; the label of the word at position i-1
+    Returns: (numpy) array containing the empirical feature count
+    '''
+
     def empirical_feature_count(self, word, label, prev_label):
-        '''
-        Compute the empirical feature count given a word, the actual label of this word and the label of the previous word.
-        Parameters: word: string; a word x_i some position i of a given sentence
-                    label: string; the actual label of the given word
-                    prev_label: string; the label of the word at position i-1
-        Returns: (numpy) array containing the empirical feature count
-        '''
-        
+
         # your code here
         
         pass
-    
-    
-    
-    
+
     # Exercise 3 b) ###################################################################
+    '''
+    Compute the expected feature count given a word, the label of the previous word and the parameters of the current model
+    (see variable theta)
+    Parameters: word: string; a word x_i some position i of a given sentence
+                prev_label: string; the label of the word at position i-1
+    Returns: (numpy) array containing the expected feature count
+    '''
     def expected_feature_count(self, word, prev_label):
-        '''
-        Compute the expected feature count given a word, the label of the previous word and the parameters of the current model
-        (see variable theta)
-        Parameters: word: string; a word x_i some position i of a given sentence
-                    prev_label: string; the label of the word at position i-1
-        Returns: (numpy) array containing the expected feature count
-        '''
-        
+
         # your code here
         
         pass
-    
-    
-    
     
     # Exercise 4 a) ###################################################################
+    '''
+    Do one learning step.
+    Parameters: word: string; a randomly selected word x_i at some position i of a given sentence
+                label: string; the actual label of the selected word
+                prev_label: string; the label of the word at position i-1
+                learning_rate: float
+    '''
+
     def parameter_update(self, word, label, prev_label, learning_rate):
-        '''
-        Do one learning step.
-        Parameters: word: string; a randomly selected word x_i at some position i of a given sentence
-                    label: string; the actual label of the selected word
-                    prev_label: string; the label of the word at position i-1
-                    learning_rate: float
-        '''
-        
+
         # your code here
         
         pass
-    
-    
-    
-    
+
     # Exercise 4 b) ###################################################################
+    '''
+    Implement the training procedure.
+    Parameters: number_iterations: int; number of parameter updates to do
+                learning_rate: float
+    '''
+
     def train(self, number_iterations, learning_rate=0.1):
-        '''
-        Implement the training procedure.
-        Parameters: number_iterations: int; number of parameter updates to do
-                    learning_rate: float
-        '''
-        
+
         # your code here
         
         pass
-    
-    
-    
     
     # Exercise 4 c) ###################################################################
+    '''
+     Predict the most probable label of the word referenced by 'word'
+     Parameters: word: string; a word x_i at some position i of a given sentence
+                 prev_label: string; the label of the word at position i-1
+     Returns: string; most probable label
+     '''
     def predict(self, word, prev_label):
-        '''
-        Predict the most probable label of the word referenced by 'word'
-        Parameters: word: string; a word x_i at some position i of a given sentence
-                    prev_label: string; the label of the word at position i-1
-        Returns: string; most probable label
-        '''
         
         # your code here
         

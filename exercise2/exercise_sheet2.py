@@ -188,7 +188,7 @@ def estimate_transition_probabilities(corpus):
 
     # Compute frequencies
     for sentence in corpus:
-        for i in range (len(sentence)-1):
+        for i in range(len(sentence)-1):
             if sentence[i+1][1] in transition_probabilities[sentence[i][1]]:
                 transition_probabilities[sentence[i][1]][sentence[i+1][1]] += 1
             else:
