@@ -51,7 +51,7 @@ def import_corpus(path_to_file):
 
 class MaxEntModel(object):
     # training corpus
-    corpus = import_corpus('./corpus_pos.txt')
+    corpus = None
     
     # (numpy) array containing the parameters of the model
     # has to be initialized by the method 'initialize'
@@ -65,6 +65,13 @@ class MaxEntModel(object):
     # set containing a list of possible labels
     # has to be set by the method 'initialize'
     labels = None
+
+    def __init__(self):
+
+        self.corpus = import_corpus('./corpus_fake.txt')
+        self.feature_indices = {}
+        self.labels = set()
+        self.initialize(self.corpus)
 
     # Exercise 1 a) ###################################################################
     '''
@@ -106,11 +113,12 @@ class MaxEntModel(object):
 
         self.theta = np.ones((len(F_list),), dtype=int)
 
-        print(self.corpus)
-        print()
-        pprint(self.feature_indices)
-
         # initialize the vector of parameters
+        self.theta = [1 for feature in self.feature_indices]
+
+        print(Colors.OKBLUE + "corpus: " + Colors.ENDC, self.corpus)
+        print(Colors.OKBLUE + "feature_indices: " + Colors.ENDC, self.feature_indices)
+        print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
 
 
     # Exercise 1 b) ###################################################################
