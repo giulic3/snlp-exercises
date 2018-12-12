@@ -178,6 +178,7 @@ class MaxEntModel(object):
         active_features = self.get_active_features(word, label, prev_label)
         conditional_probability = self.cond_normalization_factor(word, prev_label) * np.dot(self.theta, active_features)
 
+        print(Colors.OKBLUE + "conditional_probability: " + Colors.ENDC, conditional_probability)
         return conditional_probability
 
     # Exercise 3 a) ###################################################################
@@ -197,16 +198,26 @@ class MaxEntModel(object):
     '''
     Compute the expected feature count given a word, the label of the previous word and the parameters of the current
     model (see variable theta)
-    Parameters: word: string; a word x_i some position i of a given sentence
+    Parameters: word: string; a word x_i at some position i of a given sentence
                 prev_label: string; the label of the word at position i-1
     Returns: (numpy) array containing the expected feature count
     '''
     def expected_feature_count(self, word, prev_label):
 
-        # your code here
-        
-        pass
-    
+        expected_f_count = np.zeros(len(self.feature_indices))
+        conditional_probabilities = np.array([])
+
+        for label in self.labels:
+            conditional_probabilities = np.append(conditional_probabilities, self.conditional_probability(label, word, prev_label))
+        for label in self.labels:
+            active_features = self.get_active_features(word, label, prev_label)
+            expected_f_i_count = np.dot(conditional_probabilities, active_features)
+            expected_f_count = np.append(expected_f_count, expected_f_i_count)
+
+        # TODO problem with array sizes
+        print(Colors.OKBLUE + "expected_f_count: " + Colors.ENDC, expected_f_count)
+        return expected_f_count  # It's only a number??? or an array??
+
     # Exercise 4 a) ###################################################################
     '''
     Do one learning step.
