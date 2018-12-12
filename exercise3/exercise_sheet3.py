@@ -251,5 +251,61 @@ class MaxEntModel(object):
         # your code here
         
         pass
-    
+
+    # Exercise 5 a) ###################################################################
+    '''
+    Predict the empirical feature count for a set of sentences
+    Parameters: sentences: list; a list of sentences; should be a sublist of the list returnd by 'import_corpus'
+    Returns: (numpy) array containing the empirical feature count
+    '''
+    def empirical_feature_count_batch(self, sentences):
+
+        # your code here
+        pass
+
+    # Exercise 5 a) ###################################################################
+    '''
+    Predict the expected feature count for a set of sentences
+    Parameters: sentences: list; a list of sentences; should be a sublist of the list returnd by 'import_corpus'
+    Returns: (numpy) array containing the expected feature count
+    '''
+
+    def expected_feature_count_batch(self, sentences):
+
+        # your code here
+        pass
+
+    # Exercise 5 b) ###################################################################
+    '''
+    Implement the training procedure which uses 'batch_size' sentences from to training corpus
+    to compute the gradient.
+    Parameters: number_iterations: int; number of parameter updates to do
+                batch_size: int; number of sentences to use in each iteration
+                learning_rate: float
+    '''
+    def train_batch(self, number_iterations, batch_size, learning_rate=0.1):
+
+        # your code here
+
+        pass
+
+
+# Exercise 5 c) ###################################################################
+'''
+Compare the training methods 'train' and 'train_batch' in terms of convergence rate
+Parameters: corpus: list of list; a corpus returned by 'import_corpus'
+'''
+
+
+def evaluate(corpus):
+
+    # your code here
+    pass
+
+# evaluate() is outside the class
+
+
+
+
+
 
