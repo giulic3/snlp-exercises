@@ -191,9 +191,7 @@ class MaxEntModel(object):
 
     def empirical_feature_count(self, word, label, prev_label):
 
-        # your code here
-        
-        pass
+        return self.get_active_features(word, label, prev_label)
 
     # Exercise 3 b) ###################################################################
     '''
