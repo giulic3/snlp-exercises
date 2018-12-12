@@ -152,15 +152,13 @@ class MaxEntModel(object):
                 prev_label: string; the label of the word at position i-1
     Returns: float
     '''
-    # TODO use numpy functions everywhere!
     # np.prod([[1.,2.],[3.,4.]], axis=1) dà [2. , 12.]
     def cond_normalization_factor(self, word, prev_label):
         z = 0
         for label in self.labels:
             x = 0
             active_features = self.get_active_features(word, label, prev_label)
-            for j in range(len(self.feature_indices)):
-                x += self.theta[j]*active_features[j]
+            x += np.dot(self.theta, active_features)
             z += math.exp(x)
 
         print(Colors.OKBLUE + "1/Z(" + word + "): " + Colors.ENDC, np.reciprocal(z))
@@ -170,17 +168,17 @@ class MaxEntModel(object):
     '''
      Compute the conditional probability of a label given a word x_i.
      Parameters: label: string; we are interested in the conditional probability of this label
-                 word: string; a word x_i some position i of a given sentence
+                 word: string; a word x_i at some position i of a given sentence
                  prev_label: string; the label of the word at position i-1
      Returns: float
      '''
 
     def conditional_probability(self, label, word, prev_label):
 
-        # TODO
-        # count occurrences of the label
-        # count occurrences of the label associated to the word x_i
-        pass
+        active_features = self.get_active_features(word, label, prev_label)
+        conditional_probability = self.cond_normalization_factor(word, prev_label) * np.dot(self.theta, active_features)
+
+        return conditional_probability
 
     # Exercise 3 a) ###################################################################
     '''
@@ -199,8 +197,8 @@ class MaxEntModel(object):
 
     # Exercise 3 b) ###################################################################
     '''
-    Compute the expected feature count given a word, the label of the previous word and the parameters of the current model
-    (see variable theta)
+    Compute the expected feature count given a word, the label of the previous word and the parameters of the current
+    model (see variable theta)
     Parameters: word: string; a word x_i some position i of a given sentence
                 prev_label: string; the label of the word at position i-1
     Returns: (numpy) array containing the expected feature count
