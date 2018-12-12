@@ -34,7 +34,8 @@ def import_corpus(path_to_file):
 
     while True:
         line = f.readline()
-        if not line: break
+        if not line:
+            break
 
         line = line.strip()
         if len(line) == 0:
@@ -106,20 +107,20 @@ class MaxEntModel(object):
 
         for feature in F:
             F_list.append(feature)
-        # TODO serve un dizionario annidato?
         # store features and their indices into a dictionary
         for index in range(0, len(F_list)):
             self.feature_indices[F_list[index]] = index
 
+        # initialize the vector of parameters as np array filled with 1
         self.theta = np.ones((len(F_list),), dtype=int)
 
         # initialize the vector of parameters
-        self.theta = [1 for feature in self.feature_indices]
+        # self.theta = [1 for feature in self.feature_indices]
 
+        print(Colors.OKBLUE + "F_list: " + Colors.ENDC, F_list)
         print(Colors.OKBLUE + "corpus: " + Colors.ENDC, self.corpus)
         print(Colors.OKBLUE + "feature_indices: " + Colors.ENDC, self.feature_indices)
         print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
-
 
     # Exercise 1 b) ###################################################################
     '''
@@ -132,10 +133,18 @@ class MaxEntModel(object):
 
     def get_active_features(self, word, label, prev_label):
 
-        # your code here
-        
-        pass
+        # init array of active features
+        active_features = np.zeros(len(self.feature_indices))
 
+        for feature in self.feature_indices:
+            if feature == (word, label):
+                active_features[self.feature_indices[(word, label)]] = 1
+            elif feature == (prev_label, label):
+                active_features[self.feature_indices[(prev_label, label)]] = 1
+
+        # print(Colors.OKBLUE + "active_features: " + Colors.ENDC, active_features)
+
+        return active_features
     # Exercise 2 a) ###################################################################
     '''
     Compute the normalization factor 1/Z(x_i).
@@ -143,12 +152,19 @@ class MaxEntModel(object):
                 prev_label: string; the label of the word at position i-1
     Returns: float
     '''
-
+    # TODO use numpy functions everywhere!
+    # np.prod([[1.,2.],[3.,4.]], axis=1) dà [2. , 12.]
     def cond_normalization_factor(self, word, prev_label):
-        
-        # your code here
-        
-        pass
+        z = 0
+        for label in self.labels:
+            x = 0
+            active_features = self.get_active_features(word, label, prev_label)
+            for j in range(len(self.feature_indices)):
+                x += self.theta[j]*active_features[j]
+            z += math.exp(x)
+
+        print(Colors.OKBLUE + "1/Z(" + word + "): " + Colors.ENDC, np.reciprocal(z))
+        return np.reciprocal(z)
 
     # Exercise 2 b) ###################################################################
     '''
@@ -161,7 +177,9 @@ class MaxEntModel(object):
 
     def conditional_probability(self, label, word, prev_label):
 
-        # your code here
+        # TODO
+        # count occurrences of the label
+        # count occurrences of the label associated to the word x_i
         pass
 
     # Exercise 3 a) ###################################################################
