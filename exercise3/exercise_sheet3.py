@@ -229,9 +229,12 @@ class MaxEntModel(object):
 
     def parameter_update(self, word, label, prev_label, learning_rate):
 
-        # your code here
-        
-        pass
+        feature_count_difference = np.subtract(self.empirical_feature_count(word, label, prev_label),
+                                               self.expected_feature_count(word, prev_label),
+                                               axis=0)
+        alpha_factor = learning_rate * feature_count_difference
+        # Update theta parameters
+        self.theta = np.sum(self.theta, alpha_factor)
 
     # Exercise 4 b) ###################################################################
     '''
