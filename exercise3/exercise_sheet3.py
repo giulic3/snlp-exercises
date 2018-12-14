@@ -152,7 +152,7 @@ class MaxEntModel(object):
                 prev_label: string; the label of the word at position i-1
     Returns: float
     '''
-    # np.prod([[1.,2.],[3.,4.]], axis=1) dà [2. , 12.]
+
     def cond_normalization_factor(self, word, prev_label):
         z = 0
         for label in self.labels:
@@ -176,7 +176,8 @@ class MaxEntModel(object):
     def conditional_probability(self, label, word, prev_label):
 
         active_features = self.get_active_features(word, label, prev_label)
-        conditional_probability = self.cond_normalization_factor(word, prev_label) * np.dot(self.theta, active_features)
+        x = np.dot(self.theta, active_features)
+        conditional_probability = self.cond_normalization_factor(word, prev_label) * math.exp(x)
 
         print(Colors.OKBLUE + "conditional_probability: " + Colors.ENDC, conditional_probability)
         return conditional_probability
@@ -209,12 +210,11 @@ class MaxEntModel(object):
 
         for label in self.labels:
             conditional_probabilities = np.append(conditional_probabilities, self.conditional_probability(label, word, prev_label))
-        for label in self.labels:
+        for label in self.labels:  # le labels sono solo 3 e le active_features sono 15
             active_features = self.get_active_features(word, label, prev_label)
             expected_f_i_count = np.dot(conditional_probabilities, active_features)
             expected_f_count = np.append(expected_f_count, expected_f_i_count)
 
-        # TODO problem with array sizes
         print(Colors.OKBLUE + "expected_f_count: " + Colors.ENDC, expected_f_count)
         return expected_f_count  # It's only a number??? or an array??
 
