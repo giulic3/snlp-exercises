@@ -5,6 +5,7 @@ import math
 import sys
 import numpy as np
 import pprint
+import random
 
 
 # Class used to format output and improve readability
@@ -206,17 +207,18 @@ class MaxEntModel(object):
     def expected_feature_count(self, word, prev_label):
 
         expected_f_count = np.zeros(len(self.feature_indices))
-        conditional_probabilities = np.array([])
 
-        for label in self.labels:
-            conditional_probabilities = np.append(conditional_probabilities, self.conditional_probability(label, word, prev_label))
-        for label in self.labels:  # le labels sono solo 3 e le active_features sono 15
-            active_features = self.get_active_features(word, label, prev_label)
-            expected_f_i_count = np.dot(conditional_probabilities, active_features)
-            expected_f_count = np.append(expected_f_count, expected_f_i_count)
+        for feature in self.feature_indices:
+            for label in self.labels:
+                conditional_probability = self.conditional_probability(label, word, prev_label)
+                active_features = self.get_active_features(word, label, prev_label)
+                active_feature_value = active_features[self.feature_indices[(word, label)]]
+
+                expected_f_i_count = conditional_probability * active_feature_value
+                expected_f_count[self.feature_indices[feature]] = expected_f_i_count
 
         print(Colors.OKBLUE + "expected_f_count: " + Colors.ENDC, expected_f_count)
-        return expected_f_count  # It's only a number??? or an array??
+        return expected_f_count
 
     # Exercise 4 a) ###################################################################
     '''
@@ -245,7 +247,13 @@ class MaxEntModel(object):
 
     def train(self, number_iterations, learning_rate=0.1):
 
-        # your code here
+
+        for it in number_iterations:
+            training_pair = random.choice(self.feature_indices)
+            word = training_pair[0]
+            label = training_pair[1]
+            # get prev_label, given label TODO ?
+            # self.parameter_update(word, label, prev_label=, learning_rate)
         
         pass
     
@@ -259,13 +267,14 @@ class MaxEntModel(object):
     def predict(self, word, prev_label):
         
         # your code here
+        # TODO compute all the conditional probabiltiies given x_i e take the maximum
         
         pass
 
     # Exercise 5 a) ###################################################################
     '''
     Predict the empirical feature count for a set of sentences
-    Parameters: sentences: list; a list of sentences; should be a sublist of the list returnd by 'import_corpus'
+    Parameters: sentences: list; a list of sentences; should be a sublist of the list returned by 'import_corpus'
     Returns: (numpy) array containing the empirical feature count
     '''
     def empirical_feature_count_batch(self, sentences):
