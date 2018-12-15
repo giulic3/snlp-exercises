@@ -4,9 +4,9 @@
 import math
 import sys
 import numpy as np
-import pprint
 import random
 from random import randint
+import time
 
 
 # Class used to format output and improve readability
@@ -69,13 +69,6 @@ class MaxEntModel(object):
     # has to be set by the method 'initialize'
     labels = None
 
-    def __init__(self):
-
-        self.corpus = import_corpus('./corpus_fake.txt')
-        self.feature_indices = {}
-        self.labels = set()
-        self.initialize(self.corpus)
-
     # Exercise 1 a) ###################################################################
     '''
     Initialize the maximum entropy model, i.e., build the set of all features, the set of all labels
@@ -86,6 +79,8 @@ class MaxEntModel(object):
     def initialize(self, corpus):
         # (the, DT), (dog, NN)
         self.corpus = corpus
+        self.feature_indices = {}
+        self.labels = set()
         # set of all words
         X = set()
         # set of features as tuples
@@ -114,7 +109,7 @@ class MaxEntModel(object):
             self.feature_indices[F_list[index]] = index
 
         # initialize the vector of parameters as np array filled with 1
-        self.theta = np.ones((len(F_list),), dtype=int)
+        self.theta = np.ones((len(F_list),), dtype=float)
 
         # initialize the vector of parameters
         # self.theta = [1 for feature in self.feature_indices]
@@ -163,7 +158,7 @@ class MaxEntModel(object):
             x += np.dot(self.theta, active_features)
             z += math.exp(x)
 
-        print(Colors.OKBLUE + "1/Z(" + word + "): " + Colors.ENDC, np.reciprocal(z))
+        # print(Colors.OKBLUE + "1/Z(" + word + "): " + Colors.ENDC, np.reciprocal(z))
         return np.reciprocal(z)
 
     # Exercise 2 b) ###################################################################
@@ -181,7 +176,7 @@ class MaxEntModel(object):
         x = np.dot(self.theta, active_features)
         conditional_probability = self.cond_normalization_factor(word, prev_label) * math.exp(x)
 
-        print(Colors.OKBLUE + "conditional_probability: " + Colors.ENDC, conditional_probability)
+        # print(Colors.OKBLUE + "conditional_probability: " + Colors.ENDC, conditional_probability)
         return conditional_probability
 
     # Exercise 3 a) ###################################################################
@@ -231,13 +226,12 @@ class MaxEntModel(object):
     '''
 
     def parameter_update(self, word, label, prev_label, learning_rate):
-
-        feature_count_difference = np.subtract(self.empirical_feature_count(word, label, prev_label),
-                                               self.expected_feature_count(word, prev_label),
-                                               axis=0)
+        # Numpy arrays diffs element by element
+        feature_count_difference = \
+            self.empirical_feature_count(word, label, prev_label) - self.expected_feature_count(word, prev_label)
         alpha_factor = learning_rate * feature_count_difference
         # Update theta parameters
-        self.theta = np.sum(self.theta, alpha_factor)
+        self.theta += alpha_factor
 
     # Exercise 4 b) ###################################################################
     '''
@@ -248,9 +242,9 @@ class MaxEntModel(object):
 
     def train(self, number_iterations, learning_rate=0.1):
 
-        for it in number_iterations:
+        for j in range(0, number_iterations-1):
             training_sentence = random.choice(self.corpus)
-            i = randint(0, len(training_sentence-1))
+            i = randint(0, len(training_sentence) - 1)
             training_pair = training_sentence[i]
             word = training_pair[0]
             label = training_pair[1]
@@ -261,6 +255,7 @@ class MaxEntModel(object):
                 prev_label = training_sentence[i-1][1]
 
             self.parameter_update(word, label, prev_label, learning_rate)
+            print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
 
     # Exercise 4 c) ###################################################################
     '''
@@ -271,10 +266,18 @@ class MaxEntModel(object):
      '''
     def predict(self, word, prev_label):
         
-        # your code here
-        # TODO compute all the conditional probabilities given x_i e take the maximum
-        
-        pass
+        # Compute all the conditional probabilities given x_i e take the maximum
+        conditional_probabilities = np.array([])
+        args_labels = np.array([])
+        for label in self.labels:
+            prob = self.conditional_probability(label, word, prev_label)
+            conditional_probabilities = np.append(conditional_probabilities, prob)
+            args_labels = np.append(args_labels, label)
+
+        label_index = np.argmax(conditional_probabilities)
+        most_probable_label = args_labels[label_index]
+
+        return most_probable_label
 
     # Exercise 5 a) ###################################################################
     '''
@@ -284,8 +287,22 @@ class MaxEntModel(object):
     '''
     def empirical_feature_count_batch(self, sentences):
 
-        # your code here
-        pass
+        empirical_feature_count = np.array[()]
+
+        for sentence in sentences:
+            for i in range(0, len(sentence) - 1):
+                word = sentence[i][0]
+                label = sentence[i][1]
+
+                if i == 0:
+                    prev_label = 'start'
+                else:
+                    # Takes label corresponding to the previous pair in the considered sentence
+                    prev_label = sentence[i-1][1]
+                active_features = self.get_active_features(word, label, prev_label)
+                empirical_feature_count += active_features
+
+        return empirical_feature_count
 
     # Exercise 5 a) ###################################################################
     '''
