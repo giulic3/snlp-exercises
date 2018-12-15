@@ -354,10 +354,26 @@ Parameters: corpus: list of list; a corpus returned by 'import_corpus'
 
 def evaluate(corpus):
 
-    # your code here
-    pass
+    N = 10 # TODO must be large to assure convergence
+    w_a = 0
+    w_b = 0
+    # create test set by selecting 10% of all sentences randomly
 
-# evaluate() is outside the class
+    # create train set using the rest of the corpus
+
+    # create instance A of MaxEntModel to be used with train()
+    A = MaxEntModel()
+    A.initialize(corpus)
+    # create instance B of MaxEntModel to be used with train_batch()
+    B = MaxEntModel()
+    B.initialize(corpus)
+    # train A and B
+    for i in range(N):
+        A.train(1)
+        B.train_batch(1, 1) # TODO check values
+        w_a += 1
+        # w_b?
+    return
 
 
 
