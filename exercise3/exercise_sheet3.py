@@ -287,7 +287,7 @@ class MaxEntModel(object):
     '''
     def empirical_feature_count_batch(self, sentences):
 
-        empirical_feature_count = np.array[()]
+        empirical_feature_count_b = np.array([])
 
         for sentence in sentences:
             for i in range(0, len(sentence) - 1):
@@ -299,10 +299,10 @@ class MaxEntModel(object):
                 else:
                     # Takes label corresponding to the previous pair in the considered sentence
                     prev_label = sentence[i-1][1]
-                active_features = self.get_active_features(word, label, prev_label)
-                empirical_feature_count += active_features
+                empirical_feature_count = self.empirical_feature_count(word, label, prev_label)
+                empirical_feature_count_b += empirical_feature_count
 
-        return empirical_feature_count
+        return empirical_feature_count_b
 
     # Exercise 5 a) ###################################################################
     '''
@@ -312,9 +312,21 @@ class MaxEntModel(object):
     '''
 
     def expected_feature_count_batch(self, sentences):
+        expected_feature_count_b = np.array([])
 
-        # your code here
-        pass
+        for sentence in sentences:
+            for i in range(0, len(sentence) - 1):
+                word = sentence[i][0]
+                # label = sentence[i][1]
+                if i == 0:
+                    prev_label = 'start'
+                else:
+                    # Takes label corresponding to the previous pair in the considered sentence
+                    prev_label = sentence[i-1][1]
+                expected_feature_count = self.expected_feature_count(word, prev_label)
+                expected_feature_count_b += expected_feature_count
+
+        return expected_feature_count_b
 
     # Exercise 5 b) ###################################################################
     '''
@@ -326,9 +338,11 @@ class MaxEntModel(object):
     '''
     def train_batch(self, number_iterations, batch_size, learning_rate=0.1):
 
-        # your code here
-
-        pass
+        if batch_size >= len(self.corpus):
+            print('Error! batch_size is bigger than the corpus size!')
+        else:
+            for it in range(number_iterations):
+                self.train(batch_size, learning_rate)
 
 
 # Exercise 5 c) ###################################################################
