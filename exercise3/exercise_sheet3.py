@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import pprint
 import random
+from random import randint
 
 
 # Class used to format output and improve readability
@@ -247,16 +248,20 @@ class MaxEntModel(object):
 
     def train(self, number_iterations, learning_rate=0.1):
 
-
         for it in number_iterations:
-            training_pair = random.choice(self.feature_indices)
+            training_sentence = random.choice(self.corpus)
+            i = randint(0, len(training_sentence-1))
+            training_pair = training_sentence[i]
             word = training_pair[0]
             label = training_pair[1]
-            # get prev_label, given label TODO ?
-            # self.parameter_update(word, label, prev_label=, learning_rate)
-        
-        pass
-    
+
+            if i == 0:
+                prev_label = 'start'
+            else:
+                prev_label = training_sentence[i-1][1]
+
+            self.parameter_update(word, label, prev_label, learning_rate)
+
     # Exercise 4 c) ###################################################################
     '''
      Predict the most probable label of the word referenced by 'word'
@@ -267,7 +272,7 @@ class MaxEntModel(object):
     def predict(self, word, prev_label):
         
         # your code here
-        # TODO compute all the conditional probabiltiies given x_i e take the maximum
+        # TODO compute all the conditional probabilities given x_i e take the maximum
         
         pass
 
