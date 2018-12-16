@@ -13,8 +13,8 @@ def main():
     # max_entropy_object.parameter_update("the", "DT", "start", 0.1)
     # max_entropy_object.train(2)
     # label_prediction = max_entropy_object.predict('the', 'start')
-    max_entropy_object.empirical_feature_count_batch(corpus[0:2])
-
+    # max_entropy_object.empirical_feature_count_batch(corpus[0:2])
+    evaluate(corpus)
     # print(Colors.OKGREEN + "label_prediction: " + Colors.ENDC, label_prediction)
 
 

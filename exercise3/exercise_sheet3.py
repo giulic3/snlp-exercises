@@ -7,7 +7,8 @@ import numpy as np
 import random
 from random import randint
 import time
-
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 # Class used to format output and improve readability
 class Colors:
@@ -69,6 +70,10 @@ class MaxEntModel(object):
     # has to be set by the method 'initialize'
     labels = None
 
+    # number of words used for training
+    # this var is needed to implement w_b in exercise 5)
+    num_training_words = None
+
     # Exercise 1 a) ###################################################################
     '''
     Initialize the maximum entropy model, i.e., build the set of all features, the set of all labels
@@ -81,6 +86,7 @@ class MaxEntModel(object):
         self.corpus = corpus
         self.feature_indices = {}
         self.labels = set()
+        self.num_training_words = 0
         # set of all words
         X = set()
         # set of features as tuples
@@ -242,8 +248,10 @@ class MaxEntModel(object):
 
     def train(self, number_iterations, learning_rate=0.1):
 
-        for j in range(0, number_iterations-1):
+        for j in range(number_iterations):
             training_sentence = random.choice(self.corpus)
+            # Needed for w_b in exercise 5)
+            self.num_training_words = len(training_sentence)
             i = randint(0, len(training_sentence) - 1)
             training_pair = training_sentence[i]
             word = training_pair[0]
@@ -344,8 +352,15 @@ class MaxEntModel(object):
             for it in range(number_iterations):
                 self.train(batch_size, learning_rate)
 
+    '''
+    Getter method for num_training_words member.
+    '''
+    def get_num_training_words(self):
 
+        return self.num_training_words
 # Exercise 5 c) ###################################################################
+
+
 '''
 Compare the training methods 'train' and 'train_batch' in terms of convergence rate
 Parameters: corpus: list of list; a corpus returned by 'import_corpus'
@@ -354,26 +369,63 @@ Parameters: corpus: list of list; a corpus returned by 'import_corpus'
 
 def evaluate(corpus):
 
-    N = 10 # TODO must be large to assure convergence
+    N = 1  # TODO must be large to assure convergence
     w_a = 0
     w_b = 0
+    # counters that save the number of label predictions given by predict() function
+    correct_predictions_a = 0
+    correct_predictions_b = 0
+    # numpy arrays that store accuracy scores over a number of iterations
+    accuracy_a = np.array([])
+    accuracy_b = np.array([])
     # create test set by selecting 10% of all sentences randomly
-
-    # create train set using the rest of the corpus
-
+    np.random.shuffle(corpus)
+    training_set, test_set = corpus[:90], corpus[90:]
     # create instance A of MaxEntModel to be used with train()
     A = MaxEntModel()
-    A.initialize(corpus)
+    A.initialize(training_set)
     # create instance B of MaxEntModel to be used with train_batch()
     B = MaxEntModel()
-    B.initialize(corpus)
+    B.initialize(training_set)
     # train A and B
     for i in range(N):
         A.train(1)
-        B.train_batch(1, 1) # TODO check values
         w_a += 1
-        # w_b?
-    return
+        B.train_batch(1, 1)
+        w_b += B.get_num_training_words()
+        # execute predict on the test_set
+        for sentence in test_set:
+            for j in range(len(test_set)):
+                word = sentence[j][0]
+                label = sentence[j][1]
+                if j == 0:
+                    prev_label = 'start'
+                else:
+                    prev_label = sentence[j-1][1]
+                prediction_a = A.predict(word, prev_label)
+                prediction_b = B.predict(word, prev_label)
+
+                if prediction_a == label:
+                    correct_predictions_a += 1
+
+                if prediction_b == label:
+                    correct_predictions_b += 1
+                # compute accuracy for model A and B
+                it_accuracy_a = correct_predictions_a / w_a
+                it_accuracy_b = correct_predictions_b / w_b
+
+                accuracy_a = np.append(accuracy_a, it_accuracy_a)
+                accuracy_b = np.append(accuracy_b, it_accuracy_b)
+
+    # plot the data (accuracy against number of words)
+    chart_a = plt.plot(w_a, accuracy_a)
+    chart_b = plt.plot(w_b, accuracy_b)
+    plt.setp(chart_a, color='r', linewidth=2.0)
+    plt.setp(chart_b, color='b', linewidth=2.0)
+    # save the plot on file
+    pp = PdfPages('plot.pdf')
+    pp.savefig()
+    pp.close()
 
 
 
