@@ -10,6 +10,7 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+
 # Class used to format output and improve readability
 class Colors:
     HEADER = '\033[95m'
@@ -219,7 +220,7 @@ class MaxEntModel(object):
                 expected_f_i_count = conditional_probability * active_feature_value
                 expected_f_count[self.feature_indices[feature]] = expected_f_i_count
 
-        print(Colors.OKBLUE + "expected_f_count: " + Colors.ENDC, expected_f_count)
+        # print(Colors.OKBLUE + "expected_f_count: " + Colors.ENDC, expected_f_count)
         return expected_f_count
 
     # Exercise 4 a) ###################################################################
@@ -263,7 +264,7 @@ class MaxEntModel(object):
                 prev_label = training_sentence[i-1][1]
 
             self.parameter_update(word, label, prev_label, learning_rate)
-            print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
+            # print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
 
     # Exercise 4 c) ###################################################################
     '''
@@ -369,18 +370,24 @@ Parameters: corpus: list of list; a corpus returned by 'import_corpus'
 
 def evaluate(corpus):
 
-    N = 1  # TODO must be large to assure convergence
-    w_a = 0
-    w_b = 0
+    N = 1  # must be large to ensure convergence
+    w_a_tmp = 0
+    w_b_tmp = 0
     # counters that save the number of label predictions given by predict() function
     correct_predictions_a = 0
     correct_predictions_b = 0
     # numpy arrays that store accuracy scores over a number of iterations
     accuracy_a = np.array([])
     accuracy_b = np.array([])
+    # numpy arrays that store number of words used for training over a num of iterations
+    w_a = np.array([])
+    w_b = np.array([])
     # create test set by selecting 10% of all sentences randomly
     np.random.shuffle(corpus)
-    training_set, test_set = corpus[:90], corpus[90:]
+    corpus_length = len(corpus)
+    test_set_size = int(round(corpus_length / 10, 0))
+    training_set_size = int(corpus_length - test_set_size)
+    training_set, test_set = corpus[:training_set_size], corpus[test_set_size:]
     # create instance A of MaxEntModel to be used with train()
     A = MaxEntModel()
     A.initialize(training_set)
@@ -389,10 +396,13 @@ def evaluate(corpus):
     B.initialize(training_set)
     # train A and B
     for i in range(N):
+        print(Colors.WARNING + "Iteration: " + Colors.ENDC, i)
+        print(Colors.WARNING + "Training A..." + Colors.ENDC)
         A.train(1)
-        w_a += 1
+        w_a_tmp += 1
+        print(Colors.WARNING + "Training B..." + Colors.ENDC)
         B.train_batch(1, 1)
-        w_b += B.get_num_training_words()
+        w_b_tmp += B.get_num_training_words()
         # execute predict on the test_set
         for sentence in test_set:
             for j in range(len(test_set)):
@@ -402,7 +412,9 @@ def evaluate(corpus):
                     prev_label = 'start'
                 else:
                     prev_label = sentence[j-1][1]
+                print(Colors.WARNING + "Predicting label for A..." + Colors.ENDC)
                 prediction_a = A.predict(word, prev_label)
+                print(Colors.WARNING + "Predicting label for B..." + Colors.ENDC)
                 prediction_b = B.predict(word, prev_label)
 
                 if prediction_a == label:
@@ -416,8 +428,10 @@ def evaluate(corpus):
 
                 accuracy_a = np.append(accuracy_a, it_accuracy_a)
                 accuracy_b = np.append(accuracy_b, it_accuracy_b)
-
+                w_a = np.append(w_a, w_a_tmp)
+                w_b = np.append(w_b, w_b_tmp)
     # plot the data (accuracy against number of words)
+    print(Colors.WARNING + "Plotting data..." + Colors.ENDC)
     chart_a = plt.plot(w_a, accuracy_a)
     chart_b = plt.plot(w_b, accuracy_b)
     plt.setp(chart_a, color='r', linewidth=2.0)
