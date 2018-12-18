@@ -403,6 +403,7 @@ def evaluate(corpus):
         print(Colors.WARNING + "Training B..." + Colors.ENDC)
         B.train_batch(1, 1)
         w_b_tmp += B.get_num_training_words()
+
         # execute predict on the test_set
         for sentence in test_set:
             for j in range(len(test_set)):
@@ -423,8 +424,8 @@ def evaluate(corpus):
                 if prediction_b == label:
                     correct_predictions_b += 1
                 # compute accuracy for model A and B
-                it_accuracy_a = correct_predictions_a / w_a
-                it_accuracy_b = correct_predictions_b / w_b
+                it_accuracy_a = correct_predictions_a / w_a_tmp
+                it_accuracy_b = correct_predictions_b / w_b_tmp
 
                 accuracy_a = np.append(accuracy_a, it_accuracy_a)
                 accuracy_b = np.append(accuracy_b, it_accuracy_b)
@@ -432,6 +433,7 @@ def evaluate(corpus):
                 w_b = np.append(w_b, w_b_tmp)
     # plot the data (accuracy against number of words)
     print(Colors.WARNING + "Plotting data..." + Colors.ENDC)
+    # TODO bug: x and y have different dimensions! (64 e 2016)
     chart_a = plt.plot(w_a, accuracy_a)
     chart_b = plt.plot(w_b, accuracy_b)
     plt.setp(chart_a, color='r', linewidth=2.0)
