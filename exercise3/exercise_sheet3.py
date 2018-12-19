@@ -57,16 +57,16 @@ def import_corpus(path_to_file):
 class MaxEntModel(object):
     # training corpus
     corpus = None
-    
+
     # (numpy) array containing the parameters of the model
     # has to be initialized by the method 'initialize'
     theta = None
-    
+
     # dictionary containing all possible features of a corpus and their corresponding index;
     # has to be set by the method 'initialize'; hint: use a Python dictionary
     # { (word:label) : index }
     feature_indices = None
-    
+
     # set containing a list of possible labels
     # has to be set by the method 'initialize'
     labels = None
@@ -274,7 +274,7 @@ class MaxEntModel(object):
      Returns: string; most probable label
      '''
     def predict(self, word, prev_label):
-        
+
         # Compute all the conditional probabilities given x_i e take the maximum
         conditional_probabilities = np.array([])
         args_labels = np.array([])
@@ -388,6 +388,7 @@ def evaluate(corpus):
     test_set_size = int(round(corpus_length / 10, 0))
     training_set_size = int(corpus_length - test_set_size)
     training_set, test_set = corpus[:training_set_size], corpus[test_set_size:]
+    num_predictions_so_far = 0
     # create instance A of MaxEntModel to be used with train()
     A = MaxEntModel()
     A.initialize(training_set)
@@ -417,6 +418,7 @@ def evaluate(corpus):
                 prediction_a = A.predict(word, prev_label)
                 print(Colors.WARNING + "Predicting label for B..." + Colors.ENDC)
                 prediction_b = B.predict(word, prev_label)
+                num_predictions_so_far += 1
 
                 if prediction_a == label:
                     correct_predictions_a += 1
@@ -424,8 +426,8 @@ def evaluate(corpus):
                 if prediction_b == label:
                     correct_predictions_b += 1
                 # compute accuracy for model A and B
-                it_accuracy_a = correct_predictions_a / w_a_tmp
-                it_accuracy_b = correct_predictions_b / w_b_tmp
+                it_accuracy_a = correct_predictions_a / num_predictions_so_far
+                it_accuracy_b = correct_predictions_b / num_predictions_so_far
 
                 accuracy_a = np.append(accuracy_a, it_accuracy_a)
                 accuracy_b = np.append(accuracy_b, it_accuracy_b)
@@ -433,7 +435,6 @@ def evaluate(corpus):
                 w_b = np.append(w_b, w_b_tmp)
     # plot the data (accuracy against number of words)
     print(Colors.WARNING + "Plotting data..." + Colors.ENDC)
-    # TODO bug: x and y have different dimensions! (64 e 2016)
     chart_a = plt.plot(w_a, accuracy_a)
     chart_b = plt.plot(w_b, accuracy_b)
     plt.setp(chart_a, color='r', linewidth=2.0)
@@ -442,9 +443,3 @@ def evaluate(corpus):
     pp = PdfPages('plot.pdf')
     pp.savefig()
     pp.close()
-
-
-
-
-
-
