@@ -75,6 +75,10 @@ class MaxEntModel(object):
     # this var is needed to implement w_b in exercise 5)
     num_training_words = None
 
+    # dictionary containing all the active features sets
+    # { tuple(word, label, prev_label) : set{theta_param_value1, theta_param_value2, ...} }
+    active_features_sets = None
+
     # Exercise 1 a) ###################################################################
     '''
     Initialize the maximum entropy model, i.e., build the set of all features, the set of all labels
@@ -88,6 +92,8 @@ class MaxEntModel(object):
         self.feature_indices = {}
         self.labels = set()
         self.num_training_words = 0
+        self.active_features_sets = {}
+
         # set of all words
         X = set()
         # set of features as tuples
@@ -118,8 +124,18 @@ class MaxEntModel(object):
         # initialize the vector of parameters as np array filled with 1
         self.theta = np.ones((len(F_list),), dtype=float)
 
-        # initialize the vector of parameters
-        # self.theta = [1 for feature in self.feature_indices]
+        # initialize active feature sets
+        # precompute and save all the active features for each combination
+        # { (word1, label1, prev_label1), (word2, label2, prev_label2), ... }
+        print(Colors.WARNING + "Precomputing the active features sets..." + Colors.ENDC)
+        tri_combination = set()
+        for word in X:
+            for label in self.labels:
+                for prev_label in self.labels:
+                    tri_combination.add((word, label, prev_label))
+
+        for comb in tri_combination:
+            self.active_features_sets[comb] = self.get_active_features(comb[0], comb[1], comb[2])
 
         print(Colors.OKBLUE + "F_list: " + Colors.ENDC, F_list)
         print(Colors.OKBLUE + "corpus: " + Colors.ENDC, self.corpus)
@@ -134,7 +150,8 @@ class MaxEntModel(object):
                 prev_label: string; the label of the word at position i-1
     Returns: (numpy) array containing only zeros and ones.
     '''
-
+    # OLD
+    '''
     def get_active_features(self, word, label, prev_label):
 
         # init array of active features
@@ -149,6 +166,29 @@ class MaxEntModel(object):
         # print(Colors.OKBLUE + "active_features: " + Colors.ENDC, active_features)
 
         return active_features
+    '''
+
+    def get_active_features(self, word, label, prev_label):
+        # init set of active features param indexes (then used to retrieve theta values)
+        active_thetas_indices = set()
+        for feature in self.feature_indices:
+            if feature == (word, label):
+                active_thetas_indices.add(self.feature_indices[(word, label)])
+            elif feature == (prev_label, label):
+                active_thetas_indices.add(self.feature_indices[(prev_label, label)])
+
+        return active_thetas_indices
+
+    # TODO: prende un array di indici di theta e restituisce la somma dei valori theta
+    # corrispondenti a quegli indici. potrei usare un array numpy!
+
+    def get_thetas_sum(self, active_theta_indices):
+        theta_sum = 0
+        for index in active_theta_indices:
+            theta_sum += self.theta[index]
+
+        return theta_sum
+
     # Exercise 2 a) ###################################################################
     '''
     Compute the normalization factor 1/Z(x_i).
@@ -161,8 +201,10 @@ class MaxEntModel(object):
         z = 0
         for label in self.labels:
             x = 0
-            active_features = self.get_active_features(word, label, prev_label)
-            x += np.dot(self.theta, active_features)
+            # active_features = self.get_active_features(word, label, prev_label)
+            # x += np.dot(self.theta, active_features)
+            active_theta_indices = self.active_features_sets[(word, label, prev_label)]
+            x = self.get_thetas_sum(active_theta_indices)
             z += math.exp(x)
 
         # print(Colors.OKBLUE + "1/Z(" + word + "): " + Colors.ENDC, np.reciprocal(z))
@@ -179,8 +221,10 @@ class MaxEntModel(object):
 
     def conditional_probability(self, label, word, prev_label):
 
-        active_features = self.get_active_features(word, label, prev_label)
-        x = np.dot(self.theta, active_features)
+        # active_features = self.get_active_features(word, label, prev_label)
+        # x = np.dot(self.theta, active_features)
+        active_theta_indices = self.active_features_sets[(word, label, prev_label)]
+        x = self.get_thetas_sum(active_theta_indices)
         conditional_probability = self.cond_normalization_factor(word, prev_label) * math.exp(x)
 
         # print(Colors.OKBLUE + "conditional_probability: " + Colors.ENDC, conditional_probability)
@@ -197,7 +241,17 @@ class MaxEntModel(object):
 
     def empirical_feature_count(self, word, label, prev_label):
 
-        return self.get_active_features(word, label, prev_label)
+        feature_indices_length = len(self.feature_indices)
+        # init array of active features
+        empirical_f_count = np.zeros(feature_indices_length)
+
+        active_features_set = self.get_active_features(word, label, prev_label)
+        for i in range (feature_indices_length):
+            # check if index i is present as theta parameter in the active_features_set
+            if i in active_features_set:
+                empirical_f_count[i] = 1
+        # TODO to test
+        return empirical_f_count
 
     # Exercise 3 b) ###################################################################
     '''
@@ -214,7 +268,9 @@ class MaxEntModel(object):
         for feature in self.feature_indices:
             for label in self.labels:
                 conditional_probability = self.conditional_probability(label, word, prev_label)
-                active_features = self.get_active_features(word, label, prev_label)
+                # active_features = self.get_active_features(word, label, prev_label)
+                # TODO not sure of replacing get_active_featues with empirical_feature_count
+                active_features = self.empirical_feature_count(word, label, prev_label)
                 active_feature_value = active_features[self.feature_indices[(word, label)]]
 
                 expected_f_i_count = conditional_probability * active_feature_value
@@ -262,7 +318,7 @@ class MaxEntModel(object):
                 prev_label = 'start'
             else:
                 prev_label = training_sentence[i-1][1]
-
+            print(Colors.WARNING + "Training theta parameters..." + Colors.ENDC)
             self.parameter_update(word, label, prev_label, learning_rate)
             # print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
 
@@ -274,7 +330,8 @@ class MaxEntModel(object):
      Returns: string; most probable label
      '''
     def predict(self, word, prev_label):
-        
+
+        print(Colors.WARNING + "Predicting label..." + Colors.ENDC)
         # Compute all the conditional probabilities given x_i e take the maximum
         conditional_probabilities = np.array([])
         args_labels = np.array([])
@@ -433,7 +490,7 @@ def evaluate(corpus):
                 w_b = np.append(w_b, w_b_tmp)
     # plot the data (accuracy against number of words)
     print(Colors.WARNING + "Plotting data..." + Colors.ENDC)
-    # TODO bug: x and y have different dimensions! (64 e 2016)
+
     chart_a = plt.plot(w_a, accuracy_a)
     chart_b = plt.plot(w_b, accuracy_b)
     plt.setp(chart_a, color='r', linewidth=2.0)
@@ -441,10 +498,4 @@ def evaluate(corpus):
     # save the plot on file
     pp = PdfPages('plot.pdf')
     pp.savefig()
-    pp.close()
-
-
-
-
-
-
+    pp.close()\
