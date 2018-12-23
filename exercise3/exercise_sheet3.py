@@ -124,23 +124,6 @@ class MaxEntModel(object):
         # initialize the vector of parameters as np array filled with 1
         self.theta = np.ones((len(F_list),), dtype=float)
 
-        # initialize active feature sets
-        # precompute and save all the active features for each combination
-        # { (word1, label1, prev_label1), (word2, label2, prev_label2), ... }
-        # print(Colors.WARNING + "Precomputing the active features sets..." + Colors.ENDC)
-        '''
-        tri_combination = set()
-        for word in X:
-            for label in self.labels:
-                for prev_label in self.labels:
-                    tri_combination.add((word, label, prev_label))
-        
-        tri_combination = [(word, label, prev_label)
-                           for word in X for label in self.labels for prev_label in self.labels]
-
-        for comb in tri_combination:
-            self.active_features_sets[comb] = self.get_active_features(comb[0], comb[1], comb[2])
-        '''
         print(Colors.OKBLUE + "F_list: " + Colors.ENDC, F_list)
         print(Colors.OKBLUE + "corpus: " + Colors.ENDC, self.corpus)
         print(Colors.OKBLUE + "feature_indices: " + Colors.ENDC, self.feature_indices)
@@ -153,23 +136,6 @@ class MaxEntModel(object):
                 label: string; a label assigned to the given word
                 prev_label: string; the label of the word at position i-1
     Returns: (numpy) array containing only zeros and ones.
-    '''
-    # OLD
-    '''
-    def get_active_features(self, word, label, prev_label):
-
-        # init array of active features
-        active_features = np.zeros(len(self.feature_indices))
-
-        for feature in self.feature_indices:
-            if feature == (word, label):
-                active_features[self.feature_indices[(word, label)]] = 1
-            elif feature == (prev_label, label):
-                active_features[self.feature_indices[(prev_label, label)]] = 1
-
-        # print(Colors.OKBLUE + "active_features: " + Colors.ENDC, active_features)
-
-        return active_features
     '''
 
     def get_active_features(self, word, label, prev_label):
