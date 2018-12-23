@@ -3,7 +3,7 @@ from exercise_sheet3 import *
 
 def main():
 
-    corpus = import_corpus('./corpus_fake.txt')
+    corpus = import_corpus('./corpus_pos.txt')
     # max_entropy_object = MaxEntModel()
     # max_entropy_object.initialize(corpus)
     # max_entropy_object.get_active_features("the", "DT", "start")
