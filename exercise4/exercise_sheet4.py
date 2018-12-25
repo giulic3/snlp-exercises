@@ -79,8 +79,8 @@ class LinearChainCRF(object):
         self.feature_indices = {}
         # build set self.labels
         self.labels.add('start')
-        F.add(('start', corpus[0][1]))
-        F.add((corpus[0][0], corpus[0][1]))
+        F.add(('start', corpus[0][1]))  # add (start, label)
+        F.add((corpus[0][0], corpus[0][1]))  # add (word, label)
 
         for sentence in corpus:
             for i in range(1, len(sentence)):
@@ -93,16 +93,60 @@ class LinearChainCRF(object):
 
         # build dict of feature_indices
         index = 0
-        for feature in self.features:
+        for feature in F:
             self.feature_indices[feature] = index
             index += 1
 
-        for feature in self.features:
-            self.features[feature] = self.get_active_features(...) # get_active_features...
-
+        # for feature in F:
+        #    self.features[feature] = self.get_active_features(feature)
 
         # initialize the vector of parameters as np array filled with 1
         self.theta = np.ones(len(self.features), dtype=float)
+
+    # Exercise 1 b) ###################################################################
+    '''
+    Compute the sets of active features (as theta's indexes)
+    Parameters: word: string; a word at some position i of a given sentence
+                label: string; a label assigned to the given word
+                prev_label: string; the label of the word at position i-1
+    Returns: set of active features thetas for a given tuple (label, prev_label, word)
+    = (y_t, y_t-1, x_t)
+    '''
+
+    def get_active_features(self, label, prev_label, word):
+        # if the active features for this key have been already computed, just return them
+        if self.features.get((label, prev_label, word), None) is not None:
+            return self.features[(label, prev_label, word)]
+        # otherwise compute and save them
+        # init set of active features param indexes (then used to retrieve theta values)
+        active_thetas_indices = set()
+        for feature in self.feature_indices:
+            if feature == (word, label):
+                active_thetas_indices.add(self.feature_indices[(word, label)])
+            elif feature == (prev_label, label):
+                active_thetas_indices.add(self.feature_indices[(prev_label, label)])
+
+        self.features[(label, prev_label, word)] = active_thetas_indices
+
+        return active_thetas_indices
+
+    '''
+    Compute the sum of thetas given correspondent feature indices.
+    Parameters: Indices of theta parameters that correspond to active features.
+    Returns: sum of theta values
+    '''
+    # TODO: see if it can be done more easily with numpy and array splitting
+    def get_thetas_sum(self, active_theta_indices):
+        theta_sum = 0
+        for index in active_theta_indices:
+            theta_sum += self.theta[index]
+
+        return theta_sum
+
+    def compute_factor(self, label, prev_label, word):
+        factor = math.exp(self.get_thetas_sum(self.get_active_features(label, prev_label, word)))
+
+        return factor
 
     # Exercise 1 a) ###################################################################
     '''
