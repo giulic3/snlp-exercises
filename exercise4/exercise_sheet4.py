@@ -154,11 +154,27 @@ class LinearChainCRF(object):
     Parameters: sentence: list of strings representing a sentence.
     Returns: data structure containing the matrix of forward variables
     '''
+    # matrice con elemento [t, t']?  devo scorrere su tutti i j? o è un vettore?
+    # create numpy matrix! TODO
     def forward_variables(self, sentence):
 
-        # your code here
-        
-        pass
+        forward_variables_matrix = []
+        sentence_length = len(sentence)
+        labels_in_sentence = [pair[0] for pair in sentence]
+        # init first forward variable
+        # first_label = sentence[0][1]
+        first_word = sentence[0][0]
+        forward_variables_matrix[0] = [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence]
+
+        for t in range(1, sentence_length):
+            word = sentence[t][0]
+            # label = sentence[t][1]
+            prev_label = sentence[t-1][1]
+
+            forward_variables_matrix[t] = [self.compute_factor(j, prev_label, word) * forward_variables_matrix[t-1]
+                                           for j in labels_in_sentence]
+
+        return forward_variables_matrix
 
     '''
     Compute the backward variables for a given sentence.
@@ -167,6 +183,12 @@ class LinearChainCRF(object):
     '''
     def backward_variables(self, sentence):
 
+        backward_variables_matrix = []
+        sentence_length = len(sentence)
+        labels_in_sentence = [pair[0] for pair in sentence]
+
+        # init first (=last) backward variable
+        backward_variables_matrix[sentence_length-1] = [1 for j in labels_in_sentence]
         # your code here
         
         pass
@@ -179,7 +201,9 @@ class LinearChainCRF(object):
     # Exercise 1 b) ###################################################################
     def compute_z(self, sentence):
 
-        # your code here
+        forward_variables_matrix = self.forward_variables(sentence)
+        # fare la somma sulla sentence e ritornare
+        # z =
         
         pass
             
