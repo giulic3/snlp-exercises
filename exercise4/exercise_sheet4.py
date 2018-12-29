@@ -2,7 +2,6 @@
 # SNLP exercise sheet 4
 ################################################################################
 import math
-import sys
 import numpy as np
 import time
 
@@ -72,11 +71,13 @@ class LinearChainCRF(object):
 
     def initialize(self, corpus):
 
+        self.corpus = corpus
+        self.feature_indices = {}
+        self.features = {}
+        self.labels = set()
+
         F = set()
 
-        self.corpus = corpus
-
-        self.feature_indices = {}
         # build set self.labels
         self.labels.add('start')
         F.add(('start', corpus[0][1]))  # add (start, label)
@@ -97,11 +98,16 @@ class LinearChainCRF(object):
             self.feature_indices[feature] = index
             index += 1
 
+        # TODO should I init the features here? or store them only when needed?
         # for feature in F:
         #    self.features[feature] = self.get_active_features(feature)
 
         # initialize the vector of parameters as np array filled with 1
-        self.theta = np.ones(len(self.features), dtype=float)
+        self.theta = np.ones(len(self.feature_indices.keys()), dtype=float)
+
+        print(Colors.OKBLUE + "corpus: " + Colors.ENDC, self.corpus)
+        print(Colors.OKBLUE + "feature_indices: " + Colors.ENDC, self.feature_indices)
+        print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
 
     # Exercise 1 b) ###################################################################
     '''
@@ -143,6 +149,13 @@ class LinearChainCRF(object):
 
         return theta_sum
 
+    '''
+    Compute the factor given the correspondent active features.
+    Parameters: label: string; a label assigned to the given word        
+                prev_label: string; the label of the word at position i-1
+                word: string; a word at some position i of a given sentence
+    Returns: float; the factor
+    '''
     def compute_factor(self, label, prev_label, word):
         factor = math.exp(self.get_thetas_sum(self.get_active_features(label, prev_label, word)))
 
@@ -158,13 +171,16 @@ class LinearChainCRF(object):
     # create numpy matrix! TODO
     def forward_variables(self, sentence):
 
-        forward_variables_matrix = []
         sentence_length = len(sentence)
         labels_in_sentence = [pair[0] for pair in sentence]
+        # forward_variables_matrix = np.zeros((len(labels_in_sentence), sentence_length), dtype=np.float)
+        forward_variables_matrix = []
+
         # init first forward variable
         # first_label = sentence[0][1]
         first_word = sentence[0][0]
-        forward_variables_matrix[0] = [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence]
+        first_column = [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence]
+        forward_variables_matrix.append(first_column) # TODO rows or columns?
 
         for t in range(1, sentence_length):
             word = sentence[t][0]
@@ -189,9 +205,8 @@ class LinearChainCRF(object):
 
         # init first (=last) backward variable
         backward_variables_matrix[sentence_length-1] = [1 for j in labels_in_sentence]
-        # your code here
-        
-        pass
+
+        return backward_variables_matrix
 
     '''
     Compute the partition function Z(x).
@@ -261,7 +276,17 @@ class LinearChainCRF(object):
     
 def main():
 
-    corpus = import_corpus('./corpus_pos.txt')
+    corpus = import_corpus('./corpus_fake.txt')
+    crf = LinearChainCRF()
+    crf.initialize(corpus)
+    thetas = crf.get_active_features("NN", "DT", 'story')
+    summy = crf.get_thetas_sum(thetas)
+    forward_variables = crf.forward_variables(corpus[0])  # use the first sentence
+
+    # CONTROL PRINTS
+    print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
+    print(Colors.OKGREEN + "sum: " + Colors.ENDC, summy)
+    print(Colors.OKGREEN + "forward variables matrix: " + Colors.ENDC, forward_variables)
 
 
 if __name__ == "__main__":
