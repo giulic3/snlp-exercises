@@ -33,8 +33,8 @@ def import_corpus(path_to_file):
 
     while True:
         line = f.readline()
-        if not line: break
-
+        if not line:
+            break
         line = line.strip()
         if len(line) == 0:
             sentences.append(sentence)
@@ -109,7 +109,6 @@ class LinearChainCRF(object):
         print(Colors.OKBLUE + "feature_indices: " + Colors.ENDC, self.feature_indices)
         print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
 
-    # Exercise 1 b) ###################################################################
     '''
     Compute the sets of active features (as theta's indexes)
     Parameters: word: string; a word at some position i of a given sentence
@@ -167,28 +166,26 @@ class LinearChainCRF(object):
     Parameters: sentence: list of strings representing a sentence.
     Returns: data structure containing the matrix of forward variables
     '''
-    # matrice con elemento [t, t']?  devo scorrere su tutti i j? o è un vettore?
-    # create numpy matrix! TODO
     def forward_variables(self, sentence):
 
         sentence_length = len(sentence)
         labels_in_sentence = [pair[0] for pair in sentence]
-        # forward_variables_matrix = np.zeros((len(labels_in_sentence), sentence_length), dtype=np.float)
-        forward_variables_matrix = []
-
+        # i: word, loops through columns
+        # j:label, loops through rows
+        forward_variables_matrix = np.zeros((sentence_length, sentence_length), dtype=np.float)
         # init first forward variable
         # first_label = sentence[0][1]
         first_word = sentence[0][0]
-        first_column = [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence]
-        forward_variables_matrix.append(first_column) # TODO rows or columns?
+        forward_variables_matrix[:, 0] = [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence]
 
         for t in range(1, sentence_length):
             word = sentence[t][0]
-            # label = sentence[t][1]
+            label = sentence[t][1]
             prev_label = sentence[t-1][1]
-
-            forward_variables_matrix[t] = [self.compute_factor(j, prev_label, word) * forward_variables_matrix[t-1]
-                                           for j in labels_in_sentence]
+            # filling matrix per columns
+            factors_list = [self.compute_factor(label, i, word) for i in labels_in_sentence]
+            forward_variables_matrix[:, t] = \
+                [np.dot(factors_list, forward_variables_matrix[:, t-1])for j in labels_in_sentence]
 
         return forward_variables_matrix
 
@@ -208,16 +205,15 @@ class LinearChainCRF(object):
 
         return backward_variables_matrix
 
+    # Exercise 1 b) ###################################################################
     '''
     Compute the partition function Z(x).
     Parameters: sentence: list of strings representing a sentence.
     Returns: float;
     '''
-    # Exercise 1 b) ###################################################################
     def compute_z(self, sentence):
-
         forward_variables_matrix = self.forward_variables(sentence)
-        # fare la somma sulla sentence e ritornare
+        # fare la somma sulla sentence (ultima riga?) e ritornare
         # z =
         
         pass
@@ -230,31 +226,37 @@ class LinearChainCRF(object):
                 y_t_minus_one: element of the set 'self.labels'; label assigned to the word at position t-1
     Returns: float: probability;
     '''
+    # easy
     def marginal_probability(self, sentence, y_t, y_t_minus_one):
 
-        # your code here
+        # compute p(x) using backward variables
+
+        # compute marginal probability (see formula in the handout)
         
-        pass
+        return
     
     # Exercise 1 d) ###################################################################
     '''
     Compute the expected feature count for the feature referenced by 'feature'
     Parameters: sentence: list of strings representing a sentence.
                 feature: a feature; element of the set 'self.features'
-    Returns: float;
+    Returns: float: expected feature count;
     '''
+    # easy
+    # use it to precompute the expected feature count for each sentence in the corpus
+    # so they must be stored somewhere somehow
     def expected_feature_count(self, sentence, feature):
 
         # your code here
         
         pass
 
+    # Exercise 1 e) ###################################################################
     '''
     Method for training the CRF.
     Parameters: num_iterations: int; number of training iterations
                 learning_rate: float
     '''
-    # Exercise 1 e) ###################################################################
     def train(self, num_iterations, learning_rate=0.01):
 
         # your code here
