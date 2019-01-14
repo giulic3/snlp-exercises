@@ -180,12 +180,12 @@ class LinearChainCRF(object):
 
         for t in range(1, sentence_length):
             word = sentence[t][0]
-            label = sentence[t][1]
-            prev_label = sentence[t-1][1]
-            # filling matrix per columns
-            factors_list = [self.compute_factor(label, i, word) for i in labels_in_sentence]
-            forward_variables_matrix[:, t] = \
-                [np.dot(factors_list, forward_variables_matrix[:, t-1])for j in labels_in_sentence]
+            for j in range(sentence_length):
+                # prev_label = sentence[t-1][1]
+                factors_list = [self.compute_factor(j, i, word) for i in labels_in_sentence]
+                # filling matrix per columns
+                forward_variables_matrix[j, t] = \
+                    np.dot(factors_list, forward_variables_matrix[:, t-1])
 
         return forward_variables_matrix
 
@@ -196,14 +196,31 @@ class LinearChainCRF(object):
     '''
     def backward_variables(self, sentence):
 
-        backward_variables_matrix = []
         sentence_length = len(sentence)
         labels_in_sentence = [pair[0] for pair in sentence]
-
+        # i: word, loops through columns
+        # j:label, loops through rows
+        backward_variables_matrix = np.zeros((sentence_length, sentence_length), dtype=np.float)
         # init first (=last) backward variable
-        backward_variables_matrix[sentence_length-1] = [1 for j in labels_in_sentence]
-
+        backward_variables_matrix[:, sentence_length-1] = np.ones(sentence_length)
+        for t in range(sentence_length-1, 0):
+            word = sentence[t][0]
+            # label = sentence[t][1]
+            for i in range(sentence_length):
+                # filling matrix per columns
+                factors_list = [self.compute_factor(j, i, word) for j in labels_in_sentence]
+                backward_variables_matrix[i, t-1] = \
+                    np.dot(factors_list, backward_variables_matrix[:, t])
+        '''
+        first_word = sentence[0][0]
+        backward_variables_matrix[:, 0] =\
+            np.dot(
+            [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence],
+                backward_variables_matrix[:, 1])
+        '''
         return backward_variables_matrix
+
+    # TODO check again!
 
     # Exercise 1 b) ###################################################################
     '''
@@ -214,10 +231,10 @@ class LinearChainCRF(object):
     def compute_z(self, sentence):
         forward_variables_matrix = self.forward_variables(sentence)
         # fare la somma sulla sentence (ultima riga?) e ritornare
-        # z =
-        
-        pass
-            
+        z = np.sum(forward_variables_matrix[len(sentence)-1, :]) # TODO check!
+
+        return z
+
     # Exercise 1 c) ###################################################################
     '''
     Compute the marginal probability of the labels given by y_t and y_t_minus_one given a sentence.
@@ -284,11 +301,13 @@ def main():
     thetas = crf.get_active_features("NN", "DT", 'story')
     summy = crf.get_thetas_sum(thetas)
     forward_variables = crf.forward_variables(corpus[0])  # use the first sentence
+    backward_variables = crf.backward_variables(corpus[0])
 
     # CONTROL PRINTS
     print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
     print(Colors.OKGREEN + "sum: " + Colors.ENDC, summy)
     print(Colors.OKGREEN + "forward variables matrix: " + Colors.ENDC, forward_variables)
+    print(Colors.OKGREEN + "backward variables matrix: " + Colors.ENDC, backward_variables)
 
 
 if __name__ == "__main__":
