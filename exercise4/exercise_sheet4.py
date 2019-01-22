@@ -4,6 +4,7 @@
 import math
 import numpy as np
 import time
+import pprint as pp
 
 
 # Class used to format output and improve readability
@@ -74,12 +75,12 @@ class LinearChainCRF(object):
         self.corpus = corpus
         self.feature_indices = {}
         self.features = {}
-        self.labels = set()
+        self.labels = []
 
         F = set()
-
+        labels_set = set()
         # build set self.labels
-        self.labels.add('start')
+        # self.labels.add('start')
         F.add(('start', corpus[0][1]))  # add (start, label)
         F.add((corpus[0][0], corpus[0][1]))  # add (word, label)
 
@@ -88,9 +89,13 @@ class LinearChainCRF(object):
                 word = sentence[i][0]
                 label = sentence[i][1]
                 prev_label = sentence[i-1][1]
-                self.labels.add(label)
+                labels_set.add(label)
                 F.add((word, label))
                 F.add((prev_label, label))
+
+        # build list of labels
+        for label in labels_set:
+            self.labels.append(label)
 
         # build dict of feature_indices
         index = 0
@@ -142,6 +147,7 @@ class LinearChainCRF(object):
     '''
     # TODO: see if it can be done more easily with numpy and array splitting
     def get_thetas_sum(self, active_theta_indices):
+
         theta_sum = 0
         for index in active_theta_indices:
             theta_sum += self.theta[index]
@@ -167,28 +173,28 @@ class LinearChainCRF(object):
     Returns: data structure containing the matrix of forward variables
     '''
     def forward_variables(self, sentence):
-
         sentence_length = len(sentence)
-        num_labels = len(self.labels)
-        # create a list of labels to maintain the order in the tables
-        labels_list = [label for label in self.labels]
-        # i: word, loops through columns
-        # j:label, loops through rows
-        forward_variables_matrix = np.zeros((num_labels, sentence_length), dtype=np.float)
+        # list of dictionaries: where the i_th dictionary represent the i_th word of the sentence and
+        # each dict has entries of the form { label : forward_variable }
+        forward_variables_matrix = []
+        # init dictionaries
+        for i in range(0, sentence_length):
+            forward_variables_matrix.append({})
+            for label in self.labels:
+                forward_variables_matrix[i][label] = 0
         # init first forward variable
         # first_label = sentence[0][1]
         first_word = sentence[0][0]
-        forward_variables_matrix[:, 0] = [self.compute_factor(j, 'start', first_word) for j in labels_list]
+        for label in self.labels:
+            forward_variables_matrix[0][label] = self.compute_factor(label, 'start', first_word)
 
         for t in range(1, sentence_length):
             word = sentence[t][0]
-            for j in range(num_labels):
-                # prev_label = sentence[t-1][1]
-                factors_list = [self.compute_factor(j, i, word) for i in labels_list]
+            for label in self.labels:
+                prev_label = sentence[t-1][1]
                 # filling matrix per columns
-                forward_variables_matrix[j, t] = \
-                    np.dot(factors_list, forward_variables_matrix[:, t-1])
-
+                forward_variables_matrix[t][label] =\
+                    self.compute_factor(label, prev_label, word) * forward_variables_matrix[t-1][label]
         return forward_variables_matrix
 
     '''
@@ -197,34 +203,36 @@ class LinearChainCRF(object):
     Returns: data structure containing the matrix of backward variables
     '''
     def backward_variables(self, sentence):
-
         sentence_length = len(sentence)
-        num_labels = len(self.labels)
-        # create a list of labels to maintain the order in the tables
-        labels_list = [label for label in self.labels]
-        # i: word, loops through columns
-        # j:label, loops through rows
-        backward_variables_matrix = np.zeros((num_labels, sentence_length), dtype=np.float)
+        # list of dictionaries: where the i_th dictionary represent the i_th word of the sentence and
+        # each dict has entries of the form { label : backward_variable }
+        backward_variables_matrix = []
+        # init dictionaries
+        # init dictionaries
+        for i in range(0, sentence_length):
+            backward_variables_matrix.append({})
+            for label in self.labels:
+                backward_variables_matrix[i][label] = 0
         # init first (=last) backward variable
-        backward_variables_matrix[:, sentence_length-1] = np.ones(num_labels)
-        for t in range(sentence_length-1, 0):
+        for label in self.labels:
+            backward_variables_matrix[sentence_length-1][label] = 1
+
+        for t in range(sentence_length-1, 1, -1):
             word = sentence[t][0]
             # label = sentence[t][1]
-            for i in range(num_labels):
+            prev_label = sentence[t-1][1]
+            for label in self.labels:
                 # filling matrix per columns
-                factors_list = [self.compute_factor(j, i, word) for j in labels_list]
-                backward_variables_matrix[i, t-1] = \
-                    np.dot(factors_list, backward_variables_matrix[:, t])
-        '''
-        first_word = sentence[0][0]
-        backward_variables_matrix[:, 0] =\
-            np.dot(
-            [self.compute_factor(j, 'start', first_word) for j in labels_in_sentence],
-                backward_variables_matrix[:, 1])
-        '''
-        return backward_variables_matrix
+                backward_variables_matrix[t-1][label] =\
+                    self.compute_factor(label, prev_label, word) * backward_variables_matrix[t][label]
 
-    # TODO check again!
+        first_word = sentence[0][0]
+        # init first column using 'start'
+        for label in self.labels:
+            backward_variables_matrix[0] =\
+                self.compute_factor(label, 'start', first_word) * backward_variables_matrix[1][label]
+
+        return backward_variables_matrix
 
     # Exercise 1 b) ###################################################################
     '''
@@ -234,8 +242,8 @@ class LinearChainCRF(object):
     '''
     def compute_z(self, sentence):
         forward_variables_matrix = self.forward_variables(sentence)
-        # fare la somma sulla sentence (ultima riga?) e ritornare
-        z = np.sum(forward_variables_matrix[len(sentence)-1, :]) # TODO check!
+        # sum over all the probabilities in the last row and return
+        z = np.sum(forward_variables_matrix[len(sentence)-1, :])  # TODO check!
 
         return z
 
@@ -248,15 +256,20 @@ class LinearChainCRF(object):
                 t: int; position of the word the label y_t is assigned to
     Returns: float: probability;
     '''
-    # easy
     def marginal_probability(self, sentence, y_t, y_t_minus_one, t):
 
+        forward_variables_matrix = self.forward_variables(sentence)
+        backward_variables_matrix = self.backward_variables(sentence)
         # compute p(x) using backward variables
+        p = backward_variables_matrix[0, 0]
+        word = sentence[t][1]
+        psi = self.compute_factor(y_t, y_t_minus_one, word)
+        # TODO ERROR! division by 0 cause p = 0
+        marginal_probability = \
+            (forward_variables_matrix[t-1, t-1] * psi * backward_variables_matrix[t, t]) / p
+        print(forward_variables_matrix[t-1, t-1], psi, backward_variables_matrix[t, t], p)
+        return marginal_probability
 
-        # compute marginal probability (see formula in the handout)
-        
-        return
-    
     # Exercise 1 d) ###################################################################
     '''
     Compute the expected feature count for the feature referenced by 'feature'
@@ -264,14 +277,22 @@ class LinearChainCRF(object):
                 feature: a feature; element of the set 'self.features'
     Returns: float: expected feature count;
     '''
-    # easy TODO
-    # use it to precompute the EMPIRICAL feature count for each sentence in the corpus
-    # so they must be stored somewhere somehow
+    # TODO how to use feature?
     def expected_feature_count(self, sentence, feature):
 
-        # your code here
-        
-        pass
+        sentence_length = len(sentence)
+        expected_feature_count = 0.
+        for t in range(0, sentence_length-1):
+            # word = sentence[t][1]
+            summation = 0.
+            for label in self.labels:
+                for prev_label in self.labels:
+                    summation += feature * \
+                           self.marginal_probability(sentence, label, prev_label, t)
+
+            expected_feature_count += summation
+
+        return expected_feature_count
 
     # Exercise 1 e) ###################################################################
     '''
@@ -282,38 +303,43 @@ class LinearChainCRF(object):
     def train(self, num_iterations, learning_rate=0.01):
 
         # your code here
-        
         pass
-    
+
     # Exercise 2 ###################################################################
     '''
     Compute the most likely sequence of labels for the words in a given sentence.
     Parameters: sentence: list of strings representing a sentence.
-    Returns: list of lables; each label is an element of the set 'self.labels'
+    Returns: list of labels; each label is an element of the set 'self.labels'
     '''
     def most_likely_label_sequence(self, sentence):
-        
+
         # your code here
-        
+
         pass
 
-    
+
 def main():
 
-    corpus = import_corpus('./corpus_fake.txt')
+    corpus = import_corpus('./corpus_ex.txt')
     crf = LinearChainCRF()
     crf.initialize(corpus)
     thetas = crf.get_active_features("NN", "DT", 'story')
-    summy = crf.get_thetas_sum(thetas)
+    summation = crf.get_thetas_sum(thetas)
     forward_variables = crf.forward_variables(corpus[0])  # use the first sentence
     backward_variables = crf.backward_variables(corpus[0])
-
+    # marginal_probability = crf.marginal_probability(corpus[0], "NNP", "DT", 0)
+    # expected_feature_count = crf.expected_feature_count(corpus[0], 3)
     # CONTROL PRINTS
     print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
-    print(Colors.OKGREEN + "sum: " + Colors.ENDC, summy)
-    print(Colors.OKGREEN + "forward variables matrix: " + Colors.ENDC, forward_variables)
-    print(Colors.OKGREEN + "backward variables matrix: " + Colors.ENDC, backward_variables)
-    print("matrices shapes: ", forward_variables.shape, backward_variables.shape)
+    print(Colors.OKGREEN + "sum: " + Colors.ENDC, summation)
+    print(Colors.OKGREEN + "forward variables matrix: " + Colors.ENDC)
+    for d in forward_variables:
+        pp.pprint(d)
+    print(Colors.OKGREEN + "backward variables matrix: " + Colors.ENDC)
+    for d in backward_variables:
+        pp.pprint(d)
+    # print(Colors.OKGREEN + "marginal probability: " + Colors.ENDC, marginal_probability)
+    # print(Colors.OKGREEN + "expected feature count: " + Colors.ENDC, expected_feature_count)
 
 
 if __name__ == "__main__":

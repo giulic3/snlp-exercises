@@ -155,9 +155,11 @@ class MaxEntModel(object):
 
         return active_thetas_indices
 
-    # TODO: prende un array di indici di theta e restituisce la somma dei valori theta
-    # corrispondenti a quegli indici. potrei usare un array numpy!
-
+    '''
+    Compute the sum of thetas given correspondent feature indices.
+    Parameters: Indices of theta parameters that correspond to active features.
+    Returns: sum of theta values
+    '''
     def get_thetas_sum(self, active_theta_indices):
         theta_sum = 0
         for index in active_theta_indices:
@@ -226,7 +228,7 @@ class MaxEntModel(object):
             # check if index i is present as theta parameter in the active_features_set
             if i in active_features_set:
                 empirical_f_count[i] = 1
-        # TODO to test
+
         return empirical_f_count
 
     # Exercise 3 b) ###################################################################
@@ -245,7 +247,6 @@ class MaxEntModel(object):
             for label in self.labels:
                 conditional_probability = self.conditional_probability(label, word, prev_label)
                 # active_features = self.get_active_features(word, label, prev_label)
-                # TODO not sure of replacing get_active_featues with empirical_feature_count
                 active_features = self.empirical_feature_count(word, label, prev_label)
                 active_feature_value = active_features[self.feature_indices[(word, label)]]
 
