@@ -248,11 +248,13 @@ class LinearChainCRF(object):
     Parameters: sentence: list of strings representing a sentence.
     Returns: float;
     '''
-    # TODO this has to be redone
     def compute_z(self, sentence):
         forward_variables_matrix = self.forward_variables(sentence)
-        # sum over all the probabilities in the last row and return
-        z = np.sum(forward_variables_matrix[len(sentence)-1, :])  # TODO check!
+        sentence_length = len(sentence)
+        z = 0.
+        # sum over all the probabilities in the last column and return
+        for label in forward_variables_matrix[sentence_length-1].keys():
+            z += forward_variables_matrix[sentence_length-1][label]
 
         return z
 
@@ -269,14 +271,15 @@ class LinearChainCRF(object):
 
         forward_variables_matrix = self.forward_variables(sentence)
         backward_variables_matrix = self.backward_variables(sentence)
-        # compute p(x) using backward variables
-        p = backward_variables_matrix[0][sentence[0][1]]  # TODO not sure
         word = sentence[t][1]
+        z = self.compute_z(sentence)
         psi = self.compute_factor(y_t, y_t_minus_one, word)
-        # TODO ERROR! division by 0 cause p = 0
-        marginal_probability = \
-            (forward_variables_matrix[t-1][y_t_minus_one] * psi * backward_variables_matrix[t][y_t]) / p
-        print(forward_variables_matrix[t-1][y_t_minus_one], psi, backward_variables_matrix[t][y_t], p)
+        if y_t_minus_one != 'start':
+            marginal_probability = \
+                (forward_variables_matrix[t-1][y_t_minus_one] * psi * backward_variables_matrix[t][y_t]) / z
+        else:
+            marginal_probability = (psi * backward_variables_matrix[t][y_t]) / z
+
         return marginal_probability
 
     # Exercise 1 d) ###################################################################
@@ -336,7 +339,8 @@ def main():
     # summation = crf.get_thetas_sum(thetas)
     forward_variables = crf.forward_variables(corpus[0])  # use the first sentence
     backward_variables = crf.backward_variables(corpus[0])
-    # marginal_probability = crf.marginal_probability(corpus[0], "r", "q", 0)  #TODO q, start dà errore
+    z = crf.compute_z(corpus[0])
+    marginal_probability = crf.marginal_probability(corpus[0], "r", "q", 1)
     # expected_feature_count = crf.expected_feature_count(corpus[0], 3)
     # CONTROL PRINTS
     # print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
@@ -347,7 +351,8 @@ def main():
     print(Colors.OKGREEN + "backward variables matrix: " + Colors.ENDC, backward_variables)
     # for d in backward_variables:
     #    pp.pprint(d)
-    # print(Colors.OKGREEN + "marginal probability: " + Colors.ENDC, marginal_probability)
+    print(Colors.OKGREEN + "Z: " + Colors.ENDC, z)
+    print(Colors.OKGREEN + "marginal probability: " + Colors.ENDC, marginal_probability)
     # print(Colors.OKGREEN + "expected feature count: " + Colors.ENDC, expected_feature_count)
 
 
