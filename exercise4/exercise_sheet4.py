@@ -289,33 +289,93 @@ class LinearChainCRF(object):
                 feature: a feature; element of the set 'self.features'
     Returns: float: expected feature count;
     '''
-    # TODO how to use feature?
     def expected_feature_count(self, sentence, feature):
 
-        sentence_length = len(sentence)
         expected_feature_count = 0.
-        for t in range(0, sentence_length-1):
-            # word = sentence[t][1]
-            summation = 0.
-            for label in self.labels:
-                for prev_label in self.labels:
-                    summation += feature * \
-                           self.marginal_probability(sentence, label, prev_label, t)
+        sentence_length = len(sentence)
+        print("features: ", self.features)
+        # feature is a tuple x,y or y_t, y_t-1
+        index = self.feature_indices[feature]
+        # find the features that are active for that index
+        active_features_set = set()
+        # feature is a tuple of 3 elements (y_t, y_t-1, x_t)
+        for feature in self.features:
+            if index in self.features[feature]:
+                active_features_set.add(feature)
 
-            expected_feature_count += summation
+        expected_feature_count = 0.
+        for i in range(0, sentence_length):
+            for feature in active_features_set:
+                expected_feature_count += \
+                    self.marginal_probability(sentence, y_t=feature[0], y_t_minus_one=feature[1], t=i)
 
         return expected_feature_count
 
     # Exercise 1 e) ###################################################################
+    '''
+    Compute the empirical feature count given a word, the actual label of this word and the label of the previous word.
+    Parameters: word: string; a word x_i some position i of a given sentence
+                label: string; the actual label of the given word
+                prev_label: string; the label of the word at position i-1
+    Returns: (numpy) array containing the empirical feature count
+    '''
+
+    def empirical_feature_count(self, label, prev_label, word):
+
+        feature_indices_length = len(self.feature_indices)
+        # init array of active features
+        empirical_f_count = np.zeros(feature_indices_length)
+
+        active_features_set = self.get_active_features(label, prev_label, word)
+        for i in range (feature_indices_length):
+            # check if index i is present as theta parameter in the active_features_set
+            if i in active_features_set:
+                empirical_f_count[i] = 1
+
+        return empirical_f_count
+
+    '''
+    Predict the empirical feature count for a set of sentences
+    Parameters: sentences: list; a list of sentences; should be a sublist of the list returned by 'import_corpus'
+    Returns: (numpy) array containing the empirical feature count
+    '''
+    def empirical_feature_count_batch(self, sentences):
+
+        empirical_feature_count_b = np.array([])
+
+        for sentence in sentences:
+            for i in range(0, len(sentence) - 1):
+                word = sentence[i][0]
+                label = sentence[i][1]
+
+                if i == 0:
+                    prev_label = 'start'
+                else:
+                    # takes label corresponding to the previous pair in the considered sentence
+                    prev_label = sentence[i-1][1]
+                empirical_feature_count = self.empirical_feature_count(label, prev_label, word)
+                empirical_feature_count_b += empirical_feature_count
+
+        return empirical_feature_count_b
+
     '''
     Method for training the CRF.
     Parameters: num_iterations: int; number of training iterations
                 learning_rate: float
     '''
     def train(self, num_iterations, learning_rate=0.01):
+        length = len(self.theta)
+        expected_feature_count = np.zeros(length)
+        empirical_feature_count = np.zeros(length)
+        # this trains a sentence at each iteration
+        for i in range(num_iterations):
+            sentence = self.corpus[num_iterations]
+            # feature is a tuple of two elements x_t,y_t or y_t, y_t-1
+            for feature in self.feature_indices.keys():
+                index = self.feature_indices[feature]
+                expected_feature_count[index] = self.expected_feature_count(sentence, feature)
 
-        # your code here
-        pass
+            self.theta += learning_rate * (empirical_feature_count - expected_feature_count)
 
     # Exercise 2 ###################################################################
     '''
@@ -341,7 +401,7 @@ def main():
     backward_variables = crf.backward_variables(corpus[0])
     z = crf.compute_z(corpus[0])
     marginal_probability = crf.marginal_probability(corpus[0], "r", "q", 1)
-    # expected_feature_count = crf.expected_feature_count(corpus[0], 3)
+    expected_feature_count = crf.expected_feature_count(corpus[0], ("b", "q"))
     # CONTROL PRINTS
     # print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
     # print(Colors.OKGREEN + "sum: " + Colors.ENDC, summation)
@@ -353,7 +413,7 @@ def main():
     #    pp.pprint(d)
     print(Colors.OKGREEN + "Z: " + Colors.ENDC, z)
     print(Colors.OKGREEN + "marginal probability: " + Colors.ENDC, marginal_probability)
-    # print(Colors.OKGREEN + "expected feature count: " + Colors.ENDC, expected_feature_count)
+    print(Colors.OKGREEN + "expected feature count: " + Colors.ENDC, expected_feature_count)
 
 
 if __name__ == "__main__":
