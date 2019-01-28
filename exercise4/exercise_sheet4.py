@@ -4,7 +4,7 @@
 import math
 import numpy as np
 import time
-import pprint as pp
+import random
 
 
 # Class used to format output and improve readability
@@ -193,7 +193,7 @@ class LinearChainCRF(object):
         # first_label = sentence[0][1]
         first_word = sentence[0][0]
         for label in self.labels:
-            forward_variables_matrix[0][label] = self.compute_factor(label, 'start', first_word)
+            forward_variables_matrix[0][label] = round(self.compute_factor(label, 'start', first_word), 2)
 
         for t in range(1, sentence_length):
             word = sentence[t][0]
@@ -204,7 +204,7 @@ class LinearChainCRF(object):
                     # filling matrix per columns
                     summation +=\
                         self.compute_factor(label, prev_label, word) * forward_variables_matrix[t-1][label]
-                forward_variables_matrix[t][label] = summation
+                forward_variables_matrix[t][label] = round(summation, 2)
 
         return forward_variables_matrix
 
@@ -238,7 +238,7 @@ class LinearChainCRF(object):
                     # filling matrix per columns
                     summation +=\
                         self.compute_factor(label, prev_label, word) * backward_variables_matrix[t][label]
-                backward_variables_matrix[t-1][prev_label] = summation
+                backward_variables_matrix[t-1][prev_label] = round(summation, 2)
 
         return backward_variables_matrix
 
@@ -271,7 +271,7 @@ class LinearChainCRF(object):
 
         forward_variables_matrix = self.forward_variables(sentence)
         backward_variables_matrix = self.backward_variables(sentence)
-        word = sentence[t][1]
+        word = sentence[t][0]
         z = self.compute_z(sentence)
         psi = self.compute_factor(y_t, y_t_minus_one, word)
         if y_t_minus_one != 'start':
@@ -280,7 +280,7 @@ class LinearChainCRF(object):
         else:
             marginal_probability = (psi * backward_variables_matrix[t][y_t]) / z
 
-        return marginal_probability
+        return round(marginal_probability, 2)
 
     # Exercise 1 d) ###################################################################
     '''
@@ -289,27 +289,27 @@ class LinearChainCRF(object):
                 feature: a feature; element of the set 'self.features'
     Returns: float: expected feature count;
     '''
+    # feature here is an index! a number from feature_indices.values()
     def expected_feature_count(self, sentence, feature):
 
         expected_feature_count = 0.
         sentence_length = len(sentence)
-        print("features: ", self.features)
-        # feature is a tuple x,y or y_t, y_t-1
-        index = self.feature_indices[feature]
-        # find the features that are active for that index
-        active_features_set = set()
-        # feature is a tuple of 3 elements (y_t, y_t-1, x_t)
-        for feature in self.features:
-            if index in self.features[feature]:
-                active_features_set.add(feature)
 
-        expected_feature_count = 0.
-        for i in range(0, sentence_length):
-            for feature in active_features_set:
-                expected_feature_count += \
-                    self.marginal_probability(sentence, y_t=feature[0], y_t_minus_one=feature[1], t=i)
+        word = sentence[0][0]
+        for label in self.labels:
+            active_features_indices = self.get_active_features(label, 'start', word)
+            if feature in active_features_indices:
+                expected_feature_count += self.marginal_probability(sentence, label, 'start', 0)
 
-        return expected_feature_count
+        for t in range(1, sentence_length):
+            for label in self.labels:
+                for prev_label in self.labels:
+                    active_features_indices = self.get_active_features(label, prev_label, sentence[t])
+                    if feature in active_features_indices:
+                        expected_feature_count += \
+                                self.marginal_probability(sentence, label, prev_label, t)
+
+        return round(expected_feature_count, 2)
 
     # Exercise 1 e) ###################################################################
     '''
@@ -363,20 +363,32 @@ class LinearChainCRF(object):
     Parameters: num_iterations: int; number of training iterations
                 learning_rate: float
     '''
+    '''
     def train(self, num_iterations, learning_rate=0.01):
+
         length = len(self.theta)
         expected_feature_count = np.zeros(length)
         empirical_feature_count = np.zeros(length)
+        # empirical_feature_count = self.empirical_feature_count()
+        empirical_feature_count_batch = self.empirical_feature_count_batch(self.corpus)
+
         # this trains a sentence at each iteration
         for i in range(num_iterations):
-            sentence = self.corpus[num_iterations]
+            training_sentence = random.choice(self.corpus)
+
+
+            if i == 0:
+                prev_label = 'start'
+            else:
+                prev_label = training_sentence[i-1][1]
+
             # feature is a tuple of two elements x_t,y_t or y_t, y_t-1
             for feature in self.feature_indices.keys():
                 index = self.feature_indices[feature]
-                expected_feature_count[index] = self.expected_feature_count(sentence, feature)
+                expected_feature_count[index] = self.expected_feature_count(training_sentence, feature)
 
             self.theta += learning_rate * (empirical_feature_count - expected_feature_count)
-
+    '''
     # Exercise 2 ###################################################################
     '''
     Compute the most likely sequence of labels for the words in a given sentence.
@@ -401,7 +413,7 @@ def main():
     backward_variables = crf.backward_variables(corpus[0])
     z = crf.compute_z(corpus[0])
     marginal_probability = crf.marginal_probability(corpus[0], "r", "q", 1)
-    expected_feature_count = crf.expected_feature_count(corpus[0], ("b", "q"))
+    # crf.train(10)
     # CONTROL PRINTS
     # print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
     # print(Colors.OKGREEN + "sum: " + Colors.ENDC, summation)
@@ -413,7 +425,15 @@ def main():
     #    pp.pprint(d)
     print(Colors.OKGREEN + "Z: " + Colors.ENDC, z)
     print(Colors.OKGREEN + "marginal probability: " + Colors.ENDC, marginal_probability)
-    print(Colors.OKGREEN + "expected feature count: " + Colors.ENDC, expected_feature_count)
+    print(crf.marginal_probability(corpus[0], "q", "start", 0))
+    print(crf.marginal_probability(corpus[0], "r", "start", 0))
+    print(crf.marginal_probability(corpus[0], "q", "q", 1))
+    print(crf.marginal_probability(corpus[0], "q", "r", 1))
+    print(crf.marginal_probability(corpus[0], "r", "r", 1))
+    print(crf.marginal_probability(corpus[0], "r", "q", 1))
+
+    for feature in crf.feature_indices.keys():
+        print('feature:', feature, crf.expected_feature_count(corpus[0], crf.feature_indices[feature]))
 
 
 if __name__ == "__main__":
