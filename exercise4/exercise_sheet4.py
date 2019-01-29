@@ -56,21 +56,18 @@ class LinearChainCRF(object):
     # (numpy) array containing the parameters of the model
     # has to be initialized by the method 'initialize'
     theta = None
-
     # dictionary containing all possible features of a corpus and their corresponding index;
     # has to be set by the method 'initialize'; hint: use a Python dictionary
     # { (word:label) : index }
     feature_indices = None  # TODO do I need it?
-
     # set containing all features observed in the corpus 'self.corpus'
-    # choose an appropriate data structure for representing features
     # each element of this set has to be assigned to exactly one component of the vector 'self.theta'
     features = None
-
     # set containing all labels observed in the corpus 'self.corpus'
     labels = None
-
     empirical_f_count_batch = None
+    forward_vars = None
+    backward_vars = None
 
     def initialize(self, corpus):
 
@@ -119,13 +116,14 @@ class LinearChainCRF(object):
         # initialize the vector of parameters as np array filled with 1
         self.theta = np.ones(len(self.feature_indices.keys()), dtype=float)
 
+        # TODO pre compute empirical feature count for each sentence in the corpus! USE A DICT
         # init empirical feature count
-        self.empirical_f_count_batch = self.empirical_feature_count_batch(self.corpus)
+        # self.empirical_f_count_batch = self.empirical_feature_count_batch(self.corpus)
 
         print(Colors.OKBLUE + "corpus: " + Colors.ENDC, self.corpus)
         print(Colors.OKBLUE + "feature_indices: " + Colors.ENDC, self.feature_indices)
         print(Colors.OKBLUE + "theta: " + Colors.ENDC, self.theta)
-        print(Colors.OKBLUE + "empirical feature count: " + Colors.ENDC, self.empirical_f_count_batch)
+        # print(Colors.OKBLUE + "empirical feature count: " + Colors.ENDC, self.empirical_f_count_batch)
 
     '''
     Compute the sets of active features (as theta's indexes)
@@ -158,7 +156,6 @@ class LinearChainCRF(object):
     Parameters: Indices of theta parameters that correspond to active features.
     Returns: sum of theta values
     '''
-    # TODO: see if it can be done more easily with numpy and array splitting
     def get_thetas_sum(self, active_theta_indices):
 
         theta_sum = 0
@@ -354,23 +351,22 @@ class LinearChainCRF(object):
     Parameters: sentences: list; a list of sentences; should be a sublist of the list returned by 'import_corpus'
     Returns: (numpy) array containing the empirical feature count
     '''
-    def empirical_feature_count_batch(self, sentences):
+    def empirical_feature_count_batch(self, sentence):
 
         feature_indices_length = len(self.feature_indices)
         empirical_feature_count_b = np.zeros(feature_indices_length)
 
-        for sentence in sentences:
-            for i in range(0, len(sentence)):
-                word = sentence[i][0]
-                label = sentence[i][1]
+        for i in range(0, len(sentence)):
+            word = sentence[i][0]
+            label = sentence[i][1]
 
-                if i == 0:
-                    prev_label = 'start'
-                else:
-                    # Takes label corresponding to the previous pair in the considered sentence
-                    prev_label = sentence[i-1][1]
-                empirical_feature_count = self.empirical_feature_count(label, prev_label, word)
-                empirical_feature_count_b += empirical_feature_count
+            if i == 0:
+                prev_label = 'start'
+            else:
+                # Takes label corresponding to the previous pair in the considered sentence
+                prev_label = sentence[i-1][1]
+            empirical_feature_count = self.empirical_feature_count(label, prev_label, word)
+            empirical_feature_count_b += empirical_feature_count
 
         return empirical_feature_count_b
     '''
@@ -380,19 +376,19 @@ class LinearChainCRF(object):
     '''
     def train(self, num_iterations, learning_rate=0.01):
 
-        length = len(self.theta)
-        # empirical_feature_count = np.zeros(length)
         # this trains a sentence at each iteration
         for i in range(num_iterations):
-            expected_feature_count = np.zeros(length)
             training_sentence = random.choice(self.corpus)
+            expected_feature_count = np.zeros(len(self.theta))
+            empirical_f_count_batch = self.empirical_feature_count_batch(training_sentence)
+            self.forward_vars = self.forward_variables(training_sentence)
+            self.backward_vars = self.backward_variables(training_sentence)
             # feature is a tuple of two elements x_t,y_t or y_t, y_t-1
             for index in self.feature_indices.values():
                 expected_feature_count[index] = self.expected_feature_count(training_sentence, index)
 
-            self.theta += learning_rate * (self.empirical_f_count_batch - expected_feature_count)
-            # TODO save forward and backward variables and update them HERE!!!
-        print("expected feature count: ", expected_feature_count)
+            self.theta += learning_rate * (empirical_f_count_batch - expected_feature_count)
+            print("expected feature count: ", expected_feature_count)
 
     # Exercise 2 ###################################################################
     '''
@@ -402,46 +398,60 @@ class LinearChainCRF(object):
     '''
     def most_likely_label_sequence(self, sentence):
 
-        # your code here
+        labels_sequence = []
+        delta = np.zeros((len(self.labels), len(sentence)))
+        gamma = []
 
-        pass
+        for j in range(len(self.labels)):
+            first_word = sentence[0][0]
+            delta[j][0] = self.compute_factor(self.labels[j], "start", first_word)
+
+        for s in range(1, len(sentence)):
+            for j in range(len(self.labels)):
+                probs = []
+                for i in range(len(self.labels)):
+                    probs.append(
+                        self.compute_factor(self.labels[j], self.labels[i], sentence[s][0]) * delta[i][s-1])
+                delta[j][s] = max(probs)
+                gamma.append(probs.index(max(probs)))
+
+        last_column = [delta[j][len(sentence) - 1] for j in range(self.labels)]
+        index = last_column.index(max(last_column))
+        labels_sequence.append(self.labels[index])
+
+        for i in range(len(sentence) - 2, -1, -1):
+            index = gamma[i]
+            labels_sequence.append(self.labels[index])
+
+        labels_sequence = list(reversed(labels_sequence))
+
+        for i in range(len(sentence)):
+            print(sentence[i][0], ": ", labels_sequence[i])
+
+        return labels_sequence
 
 
 def main():
 
-    corpus = import_corpus('corpus_ex.txt')
+    corpus = import_corpus('corpus_dog.txt')
     crf = LinearChainCRF()
     crf.initialize(corpus)
-    thetas = crf.get_active_features("q", "start", 'a')
-    # summation = crf.get_thetas_sum(thetas)
-    forward_variables = crf.forward_variables(corpus[0])  # use the first sentence
-    backward_variables = crf.backward_variables(corpus[0])
-    z = crf.compute_z(corpus[0])
-    # marginal_probability = crf.marginal_probability(corpus[0], "r", "q", 1)
-    # crf.train(10)
-    # CONTROL PRINTS
-    # print(Colors.OKGREEN + "thetas: " + Colors.ENDC, thetas)
-    # print(Colors.OKGREEN + "sum: " + Colors.ENDC, summation)
-    print(Colors.OKGREEN + "forward variables matrix: " + Colors.ENDC, forward_variables)
-    # for d in forward_variables:
-    #     pp.pprint(d)
-    print(Colors.OKGREEN + "backward variables matrix: " + Colors.ENDC, backward_variables)
-    # for d in backward_variables:
-    #    pp.pprint(d)
-    print(Colors.OKGREEN + "Z: " + Colors.ENDC, z)
-    # print(Colors.OKGREEN + "marginal probability: " + Colors.ENDC, marginal_probability)
     # MARGINAL PROBS GIUSTE
+    '''
     print("start,q: ", crf.marginal_probability(corpus[0], "q", "start", 0))
     print("start,r: ", crf.marginal_probability(corpus[0], "r", "start", 0))
     print("q,q: ", crf.marginal_probability(corpus[0], "q", "q", 1))
     print("r,q: ", crf.marginal_probability(corpus[0], "q", "r", 1))
     print("r,r: ", crf.marginal_probability(corpus[0], "r", "r", 1))
     print("q,r: ", crf.marginal_probability(corpus[0], "r", "q", 1))
+    '''
 
     for feature in crf.feature_indices.keys():
         print(Colors.OKGREEN + 'feature:' + Colors.ENDC, feature, crf.expected_feature_count(corpus[0], crf.feature_indices[feature]))
 
-    crf.train(num_iterations=5, learning_rate=0.01)
+    crf.train(num_iterations=2, learning_rate=0.5)
+    crf.most_likely_label_sequence(corpus[len(corpus) - 1])
+    print(Colors.OKGREEN + "theta: " + Colors.ENDC, crf.theta)
 
 
 if __name__ == "__main__":
