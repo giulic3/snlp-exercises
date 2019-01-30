@@ -66,8 +66,8 @@ class LinearChainCRF(object):
     # set containing all labels observed in the corpus 'self.corpus'
     labels = None
     empirical_f_count_batch = None
-    forward_vars = None
-    backward_vars = None
+    current_forward_vars = None
+    current_backward_vars = None
 
     def initialize(self, corpus):
 
@@ -183,6 +183,10 @@ class LinearChainCRF(object):
     Returns: data structure containing the matrix of forward variables
     '''
     def forward_variables(self, sentence):
+
+        if self.current_forward_vars is not None:
+            return self.current_forward_vars
+
         sentence_length = len(sentence)
         # list of dictionaries: where the i_th dictionary represent the i_th word of the sentence and
         # each dict has entries of the form { label : forward_variable }
@@ -209,6 +213,7 @@ class LinearChainCRF(object):
                         self.compute_factor(label, prev_label, word) * forward_variables_matrix[t-1][label]
                 forward_variables_matrix[t][label] = round(summation, 2)
 
+        self.current_forward_vars = forward_variables_matrix
         return forward_variables_matrix
 
     '''
@@ -217,6 +222,10 @@ class LinearChainCRF(object):
     Returns: data structure containing the matrix of backward variables
     '''
     def backward_variables(self, sentence):
+
+        if self.current_backward_vars is not None:
+            return self.current_backward_vars
+
         sentence_length = len(sentence)
         # list of dictionaries: where the i_th dictionary represent the i_th word of the sentence and
         # each dict has entries of the form { label : backward_variable }
@@ -243,6 +252,7 @@ class LinearChainCRF(object):
                         self.compute_factor(label, prev_label, word) * backward_variables_matrix[t][label]
                 backward_variables_matrix[t-1][prev_label] = round(summation, 2)
 
+        self.current_backward_vars = backward_variables_matrix
         return backward_variables_matrix
 
     # Exercise 1 b) ###################################################################
@@ -275,6 +285,8 @@ class LinearChainCRF(object):
         forward_variables_matrix = self.forward_variables(sentence)
         backward_variables_matrix = self.backward_variables(sentence)
         word = sentence[t][0]
+        marginal_probability = 0.
+
         z = self.compute_z(sentence)
         psi = self.compute_factor(y_t, y_t_minus_one, word)
         if y_t_minus_one != 'start':
@@ -307,20 +319,18 @@ class LinearChainCRF(object):
                 if key == ('b', 'q') or key == ('b', 'r'):
                     print(Colors.WARNING + "!!!" + Colors.ENDC, key)
         '''
-        word = sentence[0][0]
+        first_word = sentence[0][0]
         for label in self.labels:
-            active_features_indices = self.get_active_features(label, 'start', word)
+            active_features_indices = self.get_active_features(label, 'start', first_word)
             if feature in active_features_indices:
-                # print("Update expected feature count")
                 expected_feature_count += self.marginal_probability(sentence, label, 'start', 0)
 
         for t in range(1, sentence_length):
+            word = sentence[t][0]
             for label in self.labels:
                 for prev_label in self.labels:
-                    active_features_indices = self.get_active_features(label, prev_label, sentence[t][0])
-                    # print(feature, active_features_indices)
+                    active_features_indices = self.get_active_features(label, prev_label, word)
                     if feature in active_features_indices:
-                        # print("Update expected feature count")
                         expected_feature_count += self.marginal_probability(sentence, label, prev_label, t)
 
         return round(expected_feature_count, 2)
@@ -378,17 +388,29 @@ class LinearChainCRF(object):
 
         # this trains a sentence at each iteration
         for i in range(num_iterations):
+            print(Colors.WARNING + "Training iteration: " + Colors.ENDC, i+1)
+
             training_sentence = random.choice(self.corpus)
             expected_feature_count = np.zeros(len(self.theta))
+
+            print(Colors.OKBLUE + "Computing empirical feature count for the training sentence..." + Colors.ENDC)
             empirical_f_count_batch = self.empirical_feature_count_batch(training_sentence)
-            self.forward_vars = self.forward_variables(training_sentence)
-            self.backward_vars = self.backward_variables(training_sentence)
+
+            print(Colors.OKBLUE + "Updating forward and backward vars for the training sentence..." + Colors.ENDC)
+            self.current_forward_vars = self.forward_variables(training_sentence)
+            self.current_backward_vars = self.backward_variables(training_sentence)
+
+            print(Colors.OKBLUE + "Computing expected feature count..." + Colors.ENDC)
             # feature is a tuple of two elements x_t,y_t or y_t, y_t-1
             for index in self.feature_indices.values():
                 expected_feature_count[index] = self.expected_feature_count(training_sentence, index)
 
+            print(Colors.OKBLUE + "Updating theta..." + Colors.ENDC)
             self.theta += learning_rate * (empirical_f_count_batch - expected_feature_count)
-            print("expected feature count: ", expected_feature_count)
+            print(Colors.OKBLUE + "Theta after training: " + Colors.ENDC, self.theta)
+
+            self.current_forward_vars = None
+            self.current_backward_vars = None
 
     # Exercise 2 ###################################################################
     '''
@@ -398,6 +420,7 @@ class LinearChainCRF(object):
     '''
     def most_likely_label_sequence(self, sentence):
 
+        print(Colors.WARNING + "Computing most likely labels sequence..." + Colors.ENDC)
         labels_sequence = []
         delta = np.zeros((len(self.labels), len(sentence)))
         gamma = []
@@ -415,7 +438,7 @@ class LinearChainCRF(object):
                 delta[j][s] = max(probs)
                 gamma.append(probs.index(max(probs)))
 
-        last_column = [delta[j][len(sentence) - 1] for j in range(self.labels)]
+        last_column = [delta[j][len(sentence) - 1] for j in range(len(self.labels))]
         index = last_column.index(max(last_column))
         labels_sequence.append(self.labels[index])
 
@@ -425,18 +448,19 @@ class LinearChainCRF(object):
 
         labels_sequence = list(reversed(labels_sequence))
 
-        for i in range(len(sentence)):
-            print(sentence[i][0], ": ", labels_sequence[i])
-
+        sequence_tagging = [(sentence[i][0], labels_sequence[i]) for i in range(len(sentence))]
+        print(Colors.OKGREEN + "Viterbi output: " + Colors.ENDC, sequence_tagging)
         return labels_sequence
 
 
 def main():
 
-    corpus = import_corpus('corpus_dog.txt')
+    corpus = import_corpus('corpus_pos.txt')
+    corpus = corpus[1:5]
+
     crf = LinearChainCRF()
     crf.initialize(corpus)
-    # MARGINAL PROBS GIUSTE
+
     '''
     print("start,q: ", crf.marginal_probability(corpus[0], "q", "start", 0))
     print("start,r: ", crf.marginal_probability(corpus[0], "r", "start", 0))
@@ -444,14 +468,14 @@ def main():
     print("r,q: ", crf.marginal_probability(corpus[0], "q", "r", 1))
     print("r,r: ", crf.marginal_probability(corpus[0], "r", "r", 1))
     print("q,r: ", crf.marginal_probability(corpus[0], "r", "q", 1))
-    '''
+
 
     for feature in crf.feature_indices.keys():
         print(Colors.OKGREEN + 'feature:' + Colors.ENDC, feature, crf.expected_feature_count(corpus[0], crf.feature_indices[feature]))
+    '''
 
-    crf.train(num_iterations=2, learning_rate=0.5)
-    crf.most_likely_label_sequence(corpus[len(corpus) - 1])
-    print(Colors.OKGREEN + "theta: " + Colors.ENDC, crf.theta)
+    crf.train(num_iterations=2, learning_rate=0.01)
+    crf.most_likely_label_sequence(corpus[0])
 
 
 if __name__ == "__main__":
