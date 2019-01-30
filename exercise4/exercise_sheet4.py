@@ -200,7 +200,7 @@ class LinearChainCRF(object):
         # first_label = sentence[0][1]
         first_word = sentence[0][0]
         for label in self.labels:
-            forward_variables_matrix[0][label] = round(self.compute_factor(label, 'start', first_word), 2)
+            forward_variables_matrix[0][label] = self.compute_factor(label, 'start', first_word)
 
         for t in range(1, sentence_length):
             word = sentence[t][0]
@@ -211,7 +211,7 @@ class LinearChainCRF(object):
                     # filling matrix per columns
                     summation +=\
                         self.compute_factor(label, prev_label, word) * forward_variables_matrix[t-1][label]
-                forward_variables_matrix[t][label] = round(summation, 2)
+                forward_variables_matrix[t][label] = summation
 
         self.current_forward_vars = forward_variables_matrix
         return forward_variables_matrix
@@ -250,7 +250,7 @@ class LinearChainCRF(object):
                     # filling matrix per columns
                     summation +=\
                         self.compute_factor(label, prev_label, word) * backward_variables_matrix[t][label]
-                backward_variables_matrix[t-1][prev_label] = round(summation, 2)
+                backward_variables_matrix[t-1][prev_label] = summation
 
         self.current_backward_vars = backward_variables_matrix
         return backward_variables_matrix
@@ -295,7 +295,7 @@ class LinearChainCRF(object):
         else:
             marginal_probability = (psi * backward_variables_matrix[t][y_t]) / z
 
-        return round(marginal_probability, 2)
+        return marginal_probability
 
     # Exercise 1 d) ###################################################################
     '''
@@ -333,7 +333,7 @@ class LinearChainCRF(object):
                     if feature in active_features_indices:
                         expected_feature_count += self.marginal_probability(sentence, label, prev_label, t)
 
-        return round(expected_feature_count, 2)
+        return expected_feature_count
 
     # Exercise 1 e) ###################################################################
     '''
@@ -427,14 +427,14 @@ class LinearChainCRF(object):
 
         for j in range(len(self.labels)):
             first_word = sentence[0][0]
-            delta[j][0] = self.compute_factor(self.labels[j], "start", first_word)
+            delta[j][0] = np.log(self.compute_factor(self.labels[j], "start", first_word))
 
         for s in range(1, len(sentence)):
             for j in range(len(self.labels)):
                 probs = []
                 for i in range(len(self.labels)):
                     probs.append(
-                        self.compute_factor(self.labels[j], self.labels[i], sentence[s][0]) * delta[i][s-1])
+                        np.log(self.compute_factor(self.labels[j], self.labels[i], sentence[s][0])) + delta[i][s-1])
                 delta[j][s] = max(probs)
                 gamma.append(probs.index(max(probs)))
 
@@ -449,7 +449,10 @@ class LinearChainCRF(object):
         labels_sequence = list(reversed(labels_sequence))
 
         sequence_tagging = [(sentence[i][0], labels_sequence[i]) for i in range(len(sentence))]
-        print(Colors.OKGREEN + "Viterbi output: " + Colors.ENDC, sequence_tagging)
+        print(Colors.OKGREEN + "Viterbi output: " + Colors.ENDC)
+        print(sequence_tagging)
+        print(labels_sequence)
+
         return labels_sequence
 
 
